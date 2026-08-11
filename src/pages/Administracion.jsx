@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import './Administracion.css';
 
 const Administracion = () => {
-  /* Estado para alternar la visibilidad del input de contraseña */
+  /* Estado para alternar la visibilidad del input de contrasena */
   const [showPassword, setShowPassword] = useState(false);
   
   /* Estados para almacenar los valores ingresados */
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  /* Instancia del hook para redireccion programatica */
+  const navigate = useNavigate();
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -16,8 +20,12 @@ const Administracion = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    /* Logica de autenticacion reservada para la futura integracion del backend */
-    console.log('Credenciales ingresadas:', { email, password });
+    
+    /* Simulacion de validacion: asegurar que los campos no esten vacios */
+    if (email && password) {
+      /* Redireccion a la ruta de geovisualización administrativa*/
+      navigate('/admin-visor');
+    }
   };
 
   return (
