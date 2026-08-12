@@ -9,7 +9,7 @@ export default function Footer() {
           <h3 className="footer__col-title">Institucional</h3>
           <div className="footer__logo-row" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 'fit-content' }}>
             <img
-              src="/gobiernoparatodos.jpeg"
+              src="/gobiernoparatodos.png"
               alt="Escudo del Estado de Campeche"
               className="footer__logo-img"
               style={{ width: 45, height: 'auto', marginBottom: 6 }}

@@ -26,14 +26,14 @@ export default function Header({ isAdmin = false }) {
       <div className="header__inner">
         <div className="header__logos">
           <div style={{ position: 'relative', height: 56, display: 'flex', alignItems: 'center' }}>
-            <img src="/gobiernoparatodos.jpeg" alt="Escudo del Estado de Campeche" className="header__logo-img header__logo-img--campeche" onError={handleImgError} />
+            <img src="/gobiernoparatodos.png" alt="Escudo del Estado de Campeche" className="header__logo-img header__logo-img--campeche" onError={handleImgError} />
             <div className="header__logo-placeholder header__logo-img--campeche" style={{ display: 'none', height: 56 }}>
               <span style={{ fontSize: 10, color: 'var(--c-gray-md)', textAlign: 'center', lineHeight: 1.3 }}>Logo<br />Campeche</span>
             </div>
           </div>
           <div className="header__logo-divider" aria-hidden="true" />
           <div style={{ position: 'relative', height: 56, display: 'flex', alignItems: 'center' }}>
-            <img src="/logocampeche.jpg" alt="Gobierno para Todos" className="header__logo-img header__logo-img--gobierno" onError={handleImgError} />
+            <img src="/logocampeche.png" alt="Gobierno para Todos" className="header__logo-img header__logo-img--gobierno" onError={handleImgError} />
             <div className="header__logo-placeholder header__logo-img--gobierno" style={{ display: 'none', height: 56 }}>
               <span style={{ fontSize: 10, color: 'var(--c-gray-md)', textAlign: 'center', lineHeight: 1.3 }}>Gobierno<br />para Todos</span>
             </div>

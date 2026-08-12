@@ -4,14 +4,12 @@ import { Eye, EyeOff } from 'lucide-react';
 import './Administracion.css';
 
 const Administracion = () => {
-  /* Estado para alternar la visibilidad del input de contrasena */
   const [showPassword, setShowPassword] = useState(false);
-  
-  /* Estados para almacenar los valores ingresados */
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  const [showPoliciesModal, setShowPoliciesModal] = useState(false);
 
-  /* Instancia del hook para redireccion programatica */
   const navigate = useNavigate();
 
   const togglePasswordVisibility = () => {
@@ -20,12 +18,20 @@ const Administracion = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    /* Simulacion de validacion: asegurar que los campos no esten vacios */
     if (email && password) {
-      /* Redireccion a la ruta de geovisualización administrativa*/
-      navigate('/admin-visor');
+      /* Interceptacion del flujo para mostrar politicas de uso */
+      setShowPoliciesModal(true);
     }
+  };
+
+  const handleAcceptPolicies = () => {
+    /* Ejecucion de la redireccion final al visor administrativo */
+    navigate('/admin-visor');
+  };
+
+  const handleCancelPolicies = () => {
+    /* Cierre del modal, el usuario permanece en la vista de login */
+    setShowPoliciesModal(false);
   };
 
   return (
@@ -54,7 +60,7 @@ const Administracion = () => {
                 type={showPassword ? 'text' : 'password'}
                 id="password"
                 className="form-input"
-                placeholder="contraseña"
+                placeholder="constraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -75,6 +81,38 @@ const Administracion = () => {
           </button>
         </form>
       </div>
+
+      {/* Renderizado condicional del modal de politicas */}
+      {showPoliciesModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2 className="modal-title">SESIM - Sistema Estatal de Seguimiento a indicadores de Movilidad y Seguridad vial</h2>
+            <h3 className="modal-subtitle">Políticas de uso del sitio</h3>
+            
+            <div className="modal-text">
+              <p>
+                La información geoespacial y estadística gestionada en este módulo de la plataforma del Gobierno del Estado de Campeche se encuentra en actualización continua por parte de las unidades administrativas competentes. Debido a la naturaleza dinámica del sistema, los datos pueden contener diferencias en relación al tema o característica que representa.
+              </p>
+              <p>
+               Para fines de estandarización, todas las capas espaciales han sido reproyectadas al sistema EPSG 4326. Es responsabilidad estricta del usuario verificar la exactitud, integridad y vigencia de la información antes de realizar cualquier análisis o alteración en el sistema.
+              </p>
+              <p>
+                Si selecciona la opción <strong>Aceptar</strong> ingresará al SESIM. Si selecciona <strong>Cancelar</strong> permanecerá en la página de inicio de sesión.
+              </p>
+            </div>
+
+            <div className="modal-actions">
+              <button className="modal-btn modal-btn-accept" onClick={handleAcceptPolicies}>
+                Aceptar
+              </button>
+              <button className="modal-btn modal-btn-cancel" onClick={handleCancelPolicies}>
+                Cancelar
+              </button>
+            
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
