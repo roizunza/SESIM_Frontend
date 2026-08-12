@@ -7,7 +7,6 @@
   overflow: hidden;
 }
 
-/* Custom Floating Map Controls (Top Right) */
 .map-custom-controls {
   position: absolute;
   top: 16px;
@@ -109,7 +108,6 @@
   z-index: 1;
 }
 
-/* Custom left sidebar style */
 .map-sidebar {
   position: absolute;
   top: 0;
@@ -257,7 +255,6 @@
   transform: translateX(18px);
 }
 
-/* Customizing Leaflet Controls for Slate/Neon theme */
 .leaflet-bar {
   border: 1px solid var(--surface-border) !important;
   box-shadow: var(--shadow-md) !important;
@@ -282,7 +279,6 @@
   color: #ffffff !important;
 }
 
-/* Leaflet Attribution styling */
 .leaflet-container .leaflet-control-attribution {
   background: rgba(11, 15, 25, 0.8) !important;
   backdrop-filter: var(--backdrop-blur) !important;
@@ -295,7 +291,7 @@
   color: var(--cyan) !important;
 }
 
-/* Evolution Panel */
+
 .evolution-panel {
   margin-top: var(--spacing-md);
   padding: var(--spacing-md);
@@ -523,4 +519,72 @@
 
 .leaflet-container .leaflet-control-attribution a:hover {
   text-decoration: underline !important;
+}
+/* --- Contenedor Arrastrable Maestro --- */
+.draggable-wrapper {
+  position: absolute;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px; 
+}
+
+.external-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; 
+}
+
+.external-toolbar button {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-white, #ffffff);
+  border: 1px solid var(--c-gray-md, #e5e7eb);
+  border-radius: 8px; 
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); 
+  cursor: pointer;
+  color: var(--c-text, #374151);
+  transition: all 0.2s ease;
+}
+
+.external-toolbar button:hover {
+  background: #f9fafb;
+  color: var(--c-guinda, #6b1428);
+  border-color: var(--c-guinda, #6b1428);
+}
+
+.external-toolbar button.active {
+  background: rgba(107, 20, 40, 0.1);
+  color: var(--c-guinda, #6b1428);
+  border-color: var(--c-guinda, #6b1428);
+}
+
+/* --- Estilos para la herramienta de medición --- */
+.measuring-mode .leaflet-container {
+  cursor: crosshair !important;
+}
+
+.measure-dot {
+  background: #ffffff;
+  border: 2px solid var(--c-guinda, #6b1428);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.measure-tooltip {
+  background: var(--c-guinda, #6b1428);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  font-size: 12px;
+  border-radius: 4px;
+  padding: 4px 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.leaflet-tooltip.measure-tooltip::before {
+  display: none;
 }
