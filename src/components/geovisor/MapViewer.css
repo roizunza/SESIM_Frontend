@@ -1,6 +1,7 @@
 .map-container-wrapper {
   flex: 1;
   width: 100%;
+  height: calc(100vh - 120px); /* Esto evita que el mapa desaparezca */
   position: relative;
   display: flex;
   flex-direction: column;

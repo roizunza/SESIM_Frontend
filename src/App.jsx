@@ -4,9 +4,8 @@ import { Routes, Route } from 'react-router-dom';
 /* Layout publico y sus vistas */
 import Plataforma from './components/plataforma/Plataforma';
 import Inicio from './pages/Inicio';
-import Dashboard from './pages/Dashboard';
-import MatrizIndicadores from './pages/MatrizIndicadores';
-import AnalisisDatos from './pages/AnalisisDatos';
+import MapViewer from './components/geovisor/MapViewer';
+import MonitoreoIndicadores from './pages/MonitoreoIndicadores';
 import Administracion from './pages/Administracion';
 
 /* Layout administrativo y sus vistas */
@@ -19,9 +18,14 @@ function App() {
       {/* BLOQUE 1: Vistas publicas (Renderizan Header, Navbar y Footer) */}
       <Route path="/" element={<Plataforma />}>
         <Route index element={<Inicio />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="matriz" element={<MatrizIndicadores />} />
-        <Route path="analisis" element={<AnalisisDatos />} />
+        
+        {/* Aquí entra tu mapa directamente, sin intermediarios */}
+        <Route path="geovisor" element={<MapViewer />} />
+        
+        {/* Aquí entra la vista en construcción */}
+        <Route path="monitoreo" element={<MonitoreoIndicadores />} />
+        
+        {/* Ruta oculta para que el botón de login funcione */}
         <Route path="admin" element={<Administracion />} />
       </Route>
 

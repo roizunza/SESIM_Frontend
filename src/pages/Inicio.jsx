@@ -98,24 +98,24 @@ const Inicio = () => {
         </div>
       </div>
 
-      <div className="modules-section">
+<div className="modules-section">
         <h2>Módulos del Sistema</h2>
         <div className="module-cards">
           <div className="module-card">
             <LayoutDashboard size={32} className="card-icon" />
-            <h3>Dashboard y Geovisor SIG</h3>
+            <h3>Geovisualizador SIG</h3>
             <p>Explora métricas globales y visualiza capas territoriales en el mapa interactivo.</p>
-            <Link to="/dashboard" className="card-link">
-              Ir al Dashboard <ArrowRight size={16} />
+            <Link to="/geovisor" className="card-link">
+              Ir al Geovisualizador <ArrowRight size={16} />
             </Link>
           </div>
           
           <div className="module-card">
             <FileSpreadsheet size={32} className="card-icon" />
-            <h3>Matriz de Indicadores</h3>
-            <p>Consulta el catálogo general y registra información en la bandeja de captura.</p>
-            <Link to="/matriz" className="card-link">
-              Ir a la Matriz <ArrowRight size={16} />
+            <h3>Monitoreo de Indicadores</h3>
+            <p>Consulta el estatus de cumplimiento y la trazabilidad normativa del Estado.</p>
+            <Link to="/monitoreo" className="card-link">
+              Ir al Monitoreo <ArrowRight size={16} />
             </Link>
           </div>
         </div>

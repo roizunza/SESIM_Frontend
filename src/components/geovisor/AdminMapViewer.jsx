@@ -223,7 +223,7 @@ const AdminMapViewer = () => {
           <div className="floating-panel" style={{ position: 'relative', top: 'auto', left: 'auto', width: '260px', margin: 0 }}>
             <div className="panel-header drag-handle" onMouseDown={handleMouseDown}>
               <List size={18} />
-              <h4>Simbología Base</h4>
+              <h4>Mapa Base</h4>
             </div>
             <div className="panel-content">
               <p className="text-muted">Leyenda de las capas activas...</p>
