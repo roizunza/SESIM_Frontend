@@ -25,7 +25,20 @@ const Administracion = () => {
   };
 
   const handleAcceptPolicies = () => {
-    /* Ejecucion de la redireccion final al visor administrativo */
+    // Simulador de roles basado en la contraseña
+    let role = 'capturista'; // Rol por defecto
+    
+    if (password.toLowerCase() === 'administradora') {
+      role = 'administrador';
+    } else if (password.toLowerCase() === 'auditora') {
+      role = 'auditor';
+    }
+
+    // Guardamos el rol en la memoria local del navegador
+    localStorage.setItem('sim_role', role);
+    
+    // Cierre del modal y redirección
+    setShowPoliciesModal(false);
     navigate('/admin-visor');
   };
 
