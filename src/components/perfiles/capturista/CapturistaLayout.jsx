@@ -7,14 +7,14 @@ import 'leaflet/dist/leaflet.css';
 import '../../geovisor/AdminMapViewer.css';
 import CapturistaModal from './CapturistaModal';
 
+/* Helper para capturar la instancia del mapa */
 const MapInstanceCapture = ({ setMapInstance }) => {
   const map = useMap();
-  useEffect(() => {
-    setMapInstance(map);
-  }, [map, setMapInstance]);
+  useEffect(() => { setMapInstance(map); }, [map, setMapInstance]);
   return null;
 };
 
+/* Componente para la herramienta de medicion lineal */
 const MeasureTool = ({ isMeasuring }) => {
   const [points, setPoints] = useState([]);
   const [distance, setDistance] = useState(0);
@@ -34,15 +34,9 @@ const MeasureTool = ({ isMeasuring }) => {
     }
   });
 
-  useEffect(() => {
-    if (!isMeasuring) {
-      setPoints([]);
-      setDistance(0);
-    }
-  }, [isMeasuring]);
+  useEffect(() => { if (!isMeasuring) { setPoints([]); setDistance(0); } }, [isMeasuring]);
 
   if (!isMeasuring || points.length === 0) return null;
-
   const dotIcon = L.divIcon({ className: 'measure-dot', iconSize: [10, 10] });
 
   return (
@@ -61,6 +55,7 @@ const MeasureTool = ({ isMeasuring }) => {
   );
 };
 
+/* Mock de datos para simulacion de la carga geoespacial */
 const mockGeoJSONData = {
   type: "FeatureCollection",
   features: [{
@@ -82,12 +77,14 @@ const CapturistaLayout = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [nombreCapaActiva, setNombreCapaActiva] = useState('');
   
-  /* --- ESTADOS DINAMICOS DE LA BANDEJA Y EL LOG --- */
+  /* Estados para gestion de bandejas y bitacora */
   const [capasEnBorradores, setCapasEnBorradores] = useState([]);
   const [capasEnRevision, setCapasEnRevision] = useState(['pimus_municipio_carmen']);
   const [actionLog, setActionLog] = useState('');
   
   const [isMeasuring, setIsMeasuring] = useState(false);
+
+  /* Logica de arrastre para el panel de simbologia */
   const [simbologiaPos, setSimbologiaPos] = useState({ x: 24, y: 24 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStartPos = useRef({ startX: 0, startY: 0, x: 0, y: 0 });
@@ -110,10 +107,7 @@ const CapturistaLayout = () => {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
+    return () => { window.removeEventListener('mousemove', handleMouseMove); window.removeEventListener('mouseup', handleMouseUp); };
   }, [isDragging]);
   
   const renderBaseMap = () => {
@@ -126,72 +120,59 @@ const CapturistaLayout = () => {
     }
   };
 
-  /* Funciones puente con la nueva logica de transicion */
+  /* Funciones de transicion de flujo */
   const handleVerifyLayer = (nombreArchivo) => {
     setNombreCapaActiva(nombreArchivo);
     setCapasEnBorradores(prev => [nombreArchivo, ...prev]);
-    setActionLog(`Carga inicial: "${nombreArchivo}" asignada a Borradores para previsualización.`);
+    setActionLog(`Carga inicial: Archivos físicos y PDF técnico de "${nombreArchivo}" retenidos en memoria local.`);
     setIsModalOpen(false);
     setIsVerifying(true);
-    
     if (mapInstance) mapInstance.flyTo([19.85, -90.53], 12, { duration: 1.5 });
   };
 
   const handleFinalSubmit = () => {
     if (nombreCapaActiva) {
-      /* Quita la capa de Borradores y la pone en Revision */
       setCapasEnBorradores(prev => prev.filter(capa => capa !== nombreCapaActiva));
       setCapasEnRevision(prev => [nombreCapaActiva, ...prev]);
-      setActionLog(`Confirmación: "${nombreCapaActiva}" enviada a revisión institucional.`);
+      setActionLog(`Confirmación EPSG y visualización: "${nombreCapaActiva}" enviada a revisión institucional.`);
     }
     setIsVerifying(false);
     setNombreCapaActiva('');
-    
     if (mapInstance) mapInstance.flyTo([19.3, -90.5], 8, { duration: 1.5 });
   };
 
   return (
     <div className="admin-map-wrapper">
       <CapturistaSidebar 
-        isSidebarOpen={isSidebarOpen} 
-        setIsSidebarOpen={setIsSidebarOpen}
-        onOpenModal={() => setIsModalOpen(true)}
-        isVerifying={isVerifying}
-        onFinalSubmit={handleFinalSubmit}
-        capasEnBorradores={capasEnBorradores}
-        capasEnRevision={capasEnRevision}
-        actionLog={actionLog}
+        isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen}
+        onOpenModal={() => setIsModalOpen(true)} isVerifying={isVerifying} onFinalSubmit={handleFinalSubmit}
+        capasEnBorradores={capasEnBorradores} capasEnRevision={capasEnRevision} actionLog={actionLog}
       />
-
-      <CapturistaModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onVerify={handleVerifyLayer}
-      />
+      
+      <CapturistaModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onVerify={handleVerifyLayer} />
 
       <div className={`admin-map-container ${isMeasuring ? 'measuring-mode' : ''}`}>
         <div className="draggable-wrapper" style={{ left: `${simbologiaPos.x}px`, top: `${simbologiaPos.y}px` }}>
+          
           <div className="floating-panel" style={{ position: 'relative', top: 'auto', left: 'auto', width: '260px', margin: 0 }}>
             <div className="panel-header drag-handle" onMouseDown={handleMouseDown}>
-              <List size={18} />
-              <h4>Simbología Activa</h4>
+              <List size={18} /><h4>Simbología Activa</h4>
             </div>
             <div className="panel-content">
               {isVerifying ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
                     <div style={{ width: '16px', height: '16px', backgroundColor: 'rgba(107, 20, 40, 0.4)', border: '2px solid #6b1428', borderRadius: '2px' }}></div>
-                    <span style={{ fontSize: '13px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={nombreCapaActiva}>
-                      {nombreCapaActiva || 'Capa en Previsualización'}
-                    </span>
+                    <span style={{ fontSize: '13px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={nombreCapaActiva}>{nombreCapaActiva}</span>
                   </div>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', paddingLeft: '24px' }}>Polígono (EPSG:4326)</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', paddingLeft: '24px' }}>Capa Vectorial (EPSG:4326)</span>
                 </div>
               ) : (
                 <p className="text-muted">No hay capas cargadas en previsualización.</p>
               )}
             </div>
           </div>
+
           <div className="external-toolbar">
             <button onClick={() => mapInstance?.zoomIn()} title="Acercar"><Plus size={16} /></button>
             <button onClick={() => mapInstance?.zoomOut()} title="Alejar"><Minus size={16} /></button>
@@ -199,7 +180,7 @@ const CapturistaLayout = () => {
           </div>
         </div>
 
-        <div className="floating-panel floating-right">
+        <div className="floating-panel floating-right" style={{ top: '24px' }}>
           <div className="accordion-section">
             <button className="accordion-header" onClick={() => setMapaBaseOpen(!mapaBaseOpen)}>
               <div className="header-title"><Map size={18} /><span>Mapa Base</span></div>
@@ -210,7 +191,6 @@ const CapturistaLayout = () => {
                 <button className={`base-map-btn ${activeBaseMap === 'cartoLight' ? 'active' : ''}`} onClick={() => setActiveBaseMap('cartoLight')}>Carto</button>
                 <button className={`base-map-btn ${activeBaseMap === 'cartoDark' ? 'active' : ''}`} onClick={() => setActiveBaseMap('cartoDark')}>Carto Dark</button>
                 <button className={`base-map-btn ${activeBaseMap === 'googleTer' ? 'active' : ''}`} onClick={() => setActiveBaseMap('googleTer')}>Google Ter</button>
-                <button className={`base-map-btn ${activeBaseMap === 'googleSat' ? 'active' : ''}`} onClick={() => setActiveBaseMap('googleSat')}>Google Sat</button>
               </div>
             </div>
           </div>
@@ -219,7 +199,13 @@ const CapturistaLayout = () => {
         <MapContainer center={[19.3, -90.5]} zoom={8} minZoom={7} maxBounds={CAMPECHE_BOUNDS} zoomControl={false} className="admin-leaflet-map" preferCanvas={true}>
           <MapInstanceCapture setMapInstance={setMapInstance} />
           {renderBaseMap()}
-          {isVerifying && <GeoJSON key={nombreCapaActiva} data={mockGeoJSONData} pathOptions={{ color: '#6b1428', weight: 2, fillColor: '#6b1428', fillOpacity: 0.4 }} />}
+          {isVerifying && (
+            <GeoJSON 
+              key={nombreCapaActiva} 
+              data={mockGeoJSONData} 
+              pathOptions={{ color: '#6b1428', weight: 2, fillColor: '#6b1428', fillOpacity: 0.4 }} 
+            />
+          )}
           <ScaleControl position="bottomleft" imperial={false} />
           <MeasureTool isMeasuring={isMeasuring} />
         </MapContainer>
