@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserCircle, LogOut, ChevronDown, ChevronUp, Layers, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { UserCircle, LogOut, ChevronDown, ChevronUp, Layers, ChevronLeft, ChevronRight, Plus, CheckCircle2 } from 'lucide-react';
 import './Capturista.css';
 
-const CapturistaSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
+const CapturistaSidebar = ({ isSidebarOpen, setIsSidebarOpen, onOpenModal, isVerifying, onFinalSubmit, capasEnBorradores, capasEnRevision, actionLog }) => {
   const navigate = useNavigate();
   const [bandejaOpen, setBandejaOpen] = useState(true);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
+  const handleSubmitAndReset = () => {
+    onFinalSubmit();
+    setTermsAccepted(false);
+  };
 
   return (
     <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : 'collapsed'}`}>
@@ -29,11 +35,59 @@ const CapturistaSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
       <nav className="admin-nav">
         <div className="admin-nav-group">
           
-          <div style={{ padding: '0 20px', marginBottom: '24px' }}>
-            <button className="btn-registro" onClick={() => console.log("Abrir CapturistaModal")}>
-              <Plus size={18} /> Registrar Indicador
+          <div style={{ padding: '0 20px', marginBottom: '16px' }}>
+            <button className="btn-registro" onClick={onOpenModal} disabled={isVerifying} style={{ opacity: isVerifying ? 0.5 : 1 }}>
+              <Plus size={18} /> Registrar Nuevo Indicador
             </button>
           </div>
+
+          {/* Banner UX del Último Paso */}
+          {isVerifying && (
+            <div style={{ 
+              margin: '0 20px 24px', 
+              padding: '16px', 
+              background: 'var(--c-white)', 
+              border: '1px solid var(--border-color)', 
+              borderRadius: '6px',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' 
+            }}>
+              <h5 style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '0 0 8px', color: 'var(--c-guinda)', fontSize: '14px', fontWeight: '700' }}>
+                <CheckCircle2 size={18} color="#10B981" /> Último paso.
+              </h5>
+              
+              <p style={{ fontSize: '12px', color: 'var(--text-primary)', marginBottom: '16px', lineHeight: '1.4' }}>
+                Asegúrese de que la capa no tenga errores o desplazamientos no deseados con relación al geovisualizador antes de enviarla a revisión.
+              </p>
+
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer', marginBottom: '16px' }}>
+                <input 
+                  type="checkbox" 
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  style={{ marginTop: '2px', cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.4', fontWeight: '500' }}>
+                  Estoy de acuerdo con enviar la capa geoespacial a la Etapa de Revisión Administrativa.
+                </span>
+              </label>
+
+              <button 
+                className="btn-solid-guinda" 
+                onClick={handleSubmitAndReset} 
+                disabled={!termsAccepted}
+                style={{ 
+                  width: '100%', 
+                  background: termsAccepted ? '#10B981' : '#E5E7EB', 
+                  color: termsAccepted ? '#ffffff' : '#9CA3AF',
+                  cursor: termsAccepted ? 'pointer' : 'not-allowed',
+                  border: 'none',
+                  transition: 'all 0.2s ease-in-out'
+                }}
+              >
+                Enviar a revisión
+              </button>
+            </div>
+          )}
 
           <div className="admin-nav-header">
             <span className="nav-title">BANDEJA DE ENTRADA</span>
@@ -44,37 +98,49 @@ const CapturistaSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
             onClick={() => setBandejaOpen(!bandejaOpen)}
           >
             <Layers size={18} />
-            <span>Indicadores</span>
+            <span>Indicadores Geoespaciales</span>
             {bandejaOpen ? <ChevronUp size={16} className="nav-chevron" /> : <ChevronDown size={16} className="nav-chevron" />}
           </button>
 
-          <div className={`admin-nav-submenu ${bandejaOpen ? 'open' : ''}`} style={{ background: 'transparent', maxHeight: bandejaOpen ? '450px' : '0' }}>
-            <div style={{ padding: '10px 20px 16px 46px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className={`admin-nav-submenu ${bandejaOpen ? 'open' : ''}`} style={{ background: 'transparent', maxHeight: bandejaOpen ? '800px' : '0' }}>
+            <div className="box-container">
               
-              <div>
+              <div style={{ width: '100%', overflow: 'hidden' }}>
                 <h5 className="bandeja-category-title">En Borradores</h5>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className="bandeja-item">nombre_capa</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                  {capasEnBorradores.length > 0 ? (
+                    capasEnBorradores.map((capa, index) => (
+                      <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                        <span className="bandeja-item" title={capa}>{capa}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>Bandeja vacía</span>
+                  )}
                 </div>
               </div>
 
-              <div>
+              <div style={{ width: '100%', overflow: 'hidden' }}>
                 <h5 className="bandeja-category-title">En Revisión</h5>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className="bandeja-item">nombre_capa</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                  {capasEnRevision.map((capa, index) => (
+                    <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                      <span className="bandeja-item" title={capa}>{capa}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div>
+              <div style={{ width: '100%', overflow: 'hidden' }}>
                 <h5 className="bandeja-category-title">Aprobados</h5>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
                   <span className="bandeja-item">nombre_capa</span>
                 </div>
               </div>
 
-              <div>
+              <div style={{ width: '100%', overflow: 'hidden' }}>
                 <h5 className="bandeja-category-title">Rechazados</h5>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span className="bandeja-item">nombre_capa</span>
                   </div>
@@ -86,9 +152,41 @@ const CapturistaSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
             </div>
           </div>
+
+          {/*BITÁCORA*/}
+          <div className="admin-nav-header" style={{ marginTop: '24px' }}>
+            <span className="nav-title">BITÁCORA
+            </span>
+          </div>
+          
+          <div style={{ padding: '0 20px', marginBottom: '24px' }}>
+            <div style={{ 
+              padding: '12px', 
+              background: 'rgba(116, 47, 47, 0.3)', 
+              borderRadius: '6px', 
+              borderLeft: '3px solid #10B981',
+              minHeight: '80px',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <span style={{ fontSize: '10px', color: '#d1d4da', fontFamily: 'monospace', display: 'block', marginBottom: '8px', letterSpacing: '0.05em' }}>
+                &gt; ACTIVIDAD
+              </span>
+              {actionLog ? (
+                <span style={{ fontSize: '11px', color: '#D1D5DB', fontFamily: 'monospace', lineHeight: '1.4', display: 'block' }}>
+                  {actionLog}
+                </span>
+              ) : (
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', fontStyle: 'italic', display: 'block' }}>
+                  En esta sección se muestran los logs del usuario capturista...
+                </span>
+              )}
+            </div>
+          </div>
+
         </div>
 
-        <div className="admin-nav-group" style={{ marginTop: 'auto' }}>
+        <div className="admin-nav-group" style={{ marginTop: 'auto', paddingTop: '20px' }}>
           <button className="admin-nav-link text-logout" onClick={() => navigate('/')}>
             <LogOut size={18} />
             <span>Cerrar Sesión</span>
