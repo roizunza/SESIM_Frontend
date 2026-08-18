@@ -12,6 +12,8 @@ import Administracion from './pages/Administracion';
 import AdminLayout from './components/plataforma/AdminLayout';
 import AdminMapViewer from './components/geovisor/AdminMapViewer';
 
+import AdministradorLayout from './components/perfiles/administradora/AdministradorLayout';
+
 function App() {
   return (
     <Routes>
@@ -33,6 +35,9 @@ function App() {
       <Route path="/admin-visor" element={<AdminLayout />}>
         <Route index element={<AdminMapViewer />} />
       </Route>
+
+      {/* BLOQUE 3: Nueva Ruta de Auditoría y Control - Perfil Administradora */}
+      <Route path="/admin-control" element={<AdministradorLayout />} />
     </Routes>
   );
 }

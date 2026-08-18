@@ -1,19 +1,18 @@
 import React from 'react';
 import CapturistaLayout from '../perfiles/capturista/CapturistaLayout';
+import AdministradorLayout from '../perfiles/administradora/AdministradorLayout';
 
 const AdminMapViewer = () => {
-  const userRole = localStorage.getItem('sim_role') || 'capturista';
+  /* Forzamos temporalmente a 'administrador' para que puedas ver el diseño, 
+     luego lo regresas a pedir el dato de localStorage */
+  const userRole = 'administrador'; 
 
-  // Renderizado condicional basado en el rol simulado
+  // Renderizado condicional basado en el rol
   switch (userRole) {
     case 'capturista':
       return <CapturistaLayout />;
     case 'administrador':
-      return (
-        <div style={{ padding: '40px', textAlign: 'center' }}>
-          <h2>Panel de Administración (En construcción)</h2>
-        </div>
-      );
+      return <AdministradorLayout />; /* <-- Aquí conectamos la interfaz real */
     case 'auditor':
       return (
         <div style={{ padding: '40px', textAlign: 'center' }}>
