@@ -206,3 +206,123 @@
     left: 0 !important; /* El banner ignora el sidebar en móvil */
   }
 }
+
+/* --- Gráficas Geoespaciales (Dashboard Derecho) --- */
+.geo-card {
+  background: var(--c-white);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.geo-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Gráfica 1: Dispersión */
+.scatter-mockup {
+  height: 80px;
+  background: #f9fafb;
+  border-left: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  position: relative;
+  border-radius: 0 0 0 4px;
+}
+
+.scatter-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--c-guinda);
+  border-radius: 50%;
+  opacity: 0.7;
+}
+
+/* Gráfica 2: Dona Dividida */
+.donut-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.donut-chart {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: conic-gradient(var(--c-guinda) 0% 68%, #e5e7eb 68% 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.donut-hole {
+  width: 44px;
+  height: 44px;
+  background: var(--c-white);
+  border-radius: 50%;
+}
+
+.donut-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  margin-left: 16px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.stat-row.primary { color: var(--c-guinda); font-weight: 700; }
+.stat-row.secondary { color: var(--text-secondary); font-weight: 600; }
+
+/* Gráfica 3: Barras Horizontales */
+.hbar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hbar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hbar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.hbar-track {
+  height: 6px;
+  background: #f3f4f6;
+  border-radius: 3px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.hbar-fill {
+  height: 100%;
+  background: var(--c-guinda);
+  border-radius: 3px;
+}
