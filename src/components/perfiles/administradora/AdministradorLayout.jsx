@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, ScaleControl, Polyline, Marker, Tooltip, useMa
 import L from 'leaflet';
 import AdministradorSidebar from './AdministradorSidebar';
 import DashboardKPIs from './DashboardKPIs';
+import PanelDictamen from './PanelDictamen';
 import { Download, Table, Play, Map, List, Plus, Minus, Ruler, ChevronDown, ChevronUp, Printer } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import '../../geovisor/AdminMapViewer.css';
@@ -93,17 +94,24 @@ const CAMPECHE_BOUNDS = [[13.5, -97.0], [25.0, -83.0]];
 
 const AdministradorLayout = () => {
   const [mapInstance, setMapInstance] = useState(null);
+  
+  /* Estados Generales de Paneles */
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [dashboardActivo, setDashboardActivo] = useState(false);
+  const [isDictamenOpen, setIsDictamenOpen] = useState(false);
+  
+  /* Estados de Datos y Capas */
   const [capaSimulada, setCapaSimulada] = useState('');
   const [capaActivaAuditoria, setCapaActivaAuditoria] = useState('');
+  const [capasEnRevision, setCapasEnRevision] = useState(['red_ciclovias_v2', 'censo_paraderos_2026']);
+  const [capasAprobadas, setCapasAprobadas] = useState(['red_vial_primaria']);
 
-  /* Estados de las herramientas del mapa */
+  /* Estados de las Herramientas del Mapa */
   const [mapaBaseOpen, setMapaBaseOpen] = useState(false);
   const [activeBaseMap, setActiveBaseMap] = useState('cartoLight');
   const [isMeasuring, setIsMeasuring] = useState(false);
 
-  /* Lógica de arrastre de la caja de herramientas */
+  /* Logica de arrastre de la caja de herramientas */
   const [herramientasPos, setHerramientasPos] = useState({ x: 300, y: 24 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStartPos = useRef({ startX: 0, startY: 0, x: 0, y: 0 });
@@ -139,6 +147,7 @@ const AdministradorLayout = () => {
     }
   };
 
+  /* Handlers Operativos */
   const handleGenerarTablero = () => {
     setCapaSimulada('Red de Movilidad Estatal');
     setDashboardActivo(true);
@@ -146,7 +155,19 @@ const AdministradorLayout = () => {
 
   const handleSelectCapaAuditoria = (nombreCapa) => {
     setCapaActivaAuditoria(nombreCapa);
+    setIsDictamenOpen(true);
     if (mapInstance) mapInstance.flyTo([19.85, -90.53], 12, { duration: 1.5 });
+  };
+
+  const procesarDictamen = (decision, comentario) => {
+    if (decision === 'aprobar') {
+      setCapasEnRevision(prev => prev.filter(c => c !== capaActivaAuditoria));
+      setCapasAprobadas(prev => [capaActivaAuditoria, ...prev]);
+    } else {
+      setCapasEnRevision(prev => prev.filter(c => c !== capaActivaAuditoria));
+    }
+    setIsDictamenOpen(false);
+    setCapaActivaAuditoria('');
   };
 
   return (
@@ -156,17 +177,13 @@ const AdministradorLayout = () => {
       <div className={`dashboard-map-area ${isMeasuring ? 'measuring-mode' : ''}`}>
         
         {/* CAJA DE HERRAMIENTAS UNIFICADA ARRASTRABLE */}
-        {/* Cambiamos a flexDirection: 'row' y alineamos al inicio */}
         <div className="draggable-wrapper" style={{ left: `${herramientasPos.x}px`, top: `${herramientasPos.y}px`, position: 'absolute', zIndex: 1000, display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: '8px' }}>
           
           <div className="floating-panel" style={{ position: 'relative', top: 'auto', left: 'auto', width: '280px', margin: 0 }}>
-            
-            {/* Header Arrastrable */}
             <div className="panel-header drag-handle" onMouseDown={handleMouseDown}>
               <List size={18} /><h4>Herramientas del Mapa</h4>
             </div>
 
-            {/* SECCIÓN 1: Simbología */}
             <div className="panel-content" style={{ borderBottom: '1px solid var(--surface-border)' }}>
               <h5 style={{ margin: '0 0 12px', fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Simbología Activa</h5>
               {capaActivaAuditoria || capaSimulada ? (
@@ -181,14 +198,12 @@ const AdministradorLayout = () => {
               )}
             </div>
 
-            {/* SECCIÓN 2: Imprimir */}
             <div style={{ padding: '16px', borderBottom: '1px solid var(--surface-border)' }}>
               <button className="btn-exportar" style={{ width: '100%', justifyContent: 'center' }}>
                 <Printer size={16} /> Imprimir Plano
               </button>
             </div>
 
-            {/* SECCIÓN 3: Mapa Base (Acordeón) */}
             <div className="accordion-section">
               <button className="accordion-header" onClick={() => setMapaBaseOpen(!mapaBaseOpen)}>
                 <div className="header-title"><Map size={16} /><span>Mapa Base</span></div>
@@ -203,19 +218,15 @@ const AdministradorLayout = () => {
                 </div>
               </div>
             </div>
-
           </div>
 
-          {/* Botones externos de zoom y medición a la derecha */}
           <div className="external-toolbar" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <button onClick={() => mapInstance?.zoomIn()} title="Acercar"><Plus size={16} /></button>
             <button onClick={() => mapInstance?.zoomOut()} title="Alejar"><Minus size={16} /></button>
             <button className={isMeasuring ? 'active' : ''} onClick={() => setIsMeasuring(!isMeasuring)} title="Medir distancia"><Ruler size={16} /></button>
           </div>
-
         </div>
 
-        {/* Renderizado del Mapa Leaflet */}
         <MapContainer center={[19.3, -90.5]} zoom={8} minZoom={7} maxBounds={CAMPECHE_BOUNDS} zoomControl={false} style={{ width: '100%', height: '100%', zIndex: 1 }} preferCanvas={true}>
           <MapInstanceCapture setMapInstance={setMapInstance} />
           {renderBaseMap()}
@@ -236,21 +247,29 @@ const AdministradorLayout = () => {
         <AdministradorSidebar 
           isSidebarOpen={isSidebarOpen} 
           setIsSidebarOpen={setIsSidebarOpen}
-          capasEnRevision={['red_ciclovias_v2']} 
-          capasAprobadas={[]}
+          capasEnRevision={capasEnRevision} 
+          capasAprobadas={capasAprobadas}
           onSelectCapa={handleSelectCapaAuditoria}
           capaActiva={capaActivaAuditoria}
         />
       </div>
 
-      {/* CAPA 3: KPIs DERECHA */}
+      {/* CAPA 3: CAJÓN DE DICTAMEN (Auditoría de Solicitudes) */}
+      <PanelDictamen 
+        capa={capaActivaAuditoria}
+        isOpen={isDictamenOpen}
+        onClose={() => setIsDictamenOpen(false)}
+        onDictamen={procesarDictamen}
+      />
+
+      {/* CAPA 4: KPIs DERECHA */}
       {dashboardActivo && (
         <div className="floating-right-panel" style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
           <DashboardKPIs capa={capaSimulada} />
         </div>
       )}
 
-      {/* CAPA 4: TABLERO OPERATIVO INFERIOR */}
+      {/* CAPA 5: TABLERO OPERATIVO INFERIOR */}
       <div className="fullwidth-bottom-banner" style={{ left: isSidebarOpen ? '280px' : '0', transition: 'left 0.3s ease' }}>
         <div className="banner-filter-row">
           
