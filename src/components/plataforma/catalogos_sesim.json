@@ -19,11 +19,6 @@
     {"id": "pimus", "etiqueta": "Programa Integral de Movilidad Urbana Sustentable"},
     {"id": "pmduot", "etiqueta": "Programa Municipal de Desarrollo Urbano y Ordenamiento Territorial"}
   ],
-  "cat_responsable": [
-    {"id": "estado", "etiqueta": "Gobierno Estatal"},
-    {"id": "municipio", "etiqueta": "Gobierno Municipal"},
-    {"id": "federacion", "etiqueta": "Gobierno Federal"}
-  ],
   "cat_periodicidad": [
     {"id": "cada_1_anio", "etiqueta": "Anual"},
     {"id": "cada_2_anios", "etiqueta": "Bienal"},
@@ -54,5 +49,22 @@
     {"id": "vigente_admin", "etiqueta": "Aprobado (Uso Interno)"},
     {"id": "vigente_publico", "etiqueta": "Aprobado (Público)"},
     {"id": "rechazado", "etiqueta": "Rechazado"}
+  ],
+  "cat_instituciones": [
+    {"id": "sedetu", "etiqueta": "Secretaría de Desarrollo Territorial, Urbano y Obras Públicas (SEDETU)"},
+    {"id": "semabicce", "etiqueta": "Secretaría de Medio Ambiente, Biodiversidad, Cambio Climático y Energía (SEMABICCE)"},
+    {"id": "sduec", "etiqueta": "Secretaría de Desarrollo Urbano, Obras Públicas e Infraestructura"},
+    {"id": "inegi", "etiqueta": "Instituto Nacional de Estadística y Geografía (INEGI)"},
+    {"id": "implan", "etiqueta": "Instituto Municipal de Planeación (IMPLAN)"},
+    {"id": "otra", "etiqueta": "Otra"}
+  ],
+  "cat_anios": [
+    {"id": "2026", "etiqueta": "2026"},
+    {"id": "2025", "etiqueta": "2025"},
+    {"id": "2024", "etiqueta": "2024"},
+    {"id": "2023", "etiqueta": "2023"},
+    {"id": "2022", "etiqueta": "2022"},
+    {"id": "2021", "etiqueta": "2021"},
+    {"id": "2020", "etiqueta": "2020"}
   ]
 }

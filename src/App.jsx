@@ -14,6 +14,9 @@ import AdminMapViewer from './components/geovisor/AdminMapViewer';
 
 import AdministradorLayout from './components/perfiles/administradora/AdministradorLayout';
 
+/* Componentes de Bitácora / Logs */
+import Userlogs from './components/logs/Userlogs';
+
 function App() {
   return (
     <Routes>
@@ -38,6 +41,15 @@ function App() {
 
       {/* BLOQUE 3: Nueva Ruta de Auditoría y Control - Perfil Administradora */}
       <Route path="/admin-control" element={<AdministradorLayout />} />
+
+      {/* BLOQUE 4: Rutas de Bitácora (Envueltas en AdminLayout para mantener el Header) */}
+      <Route element={<AdminLayout />}>
+        {/* Vista personal del capturista */}
+        <Route path="/logs/user/:userId" element={<Userlogs />} />
+        
+        {/* Vista global de la administradora (por ahora reutilizamos el mismo componente) */}
+        <Route path="/logs/global" element={<Userlogs />} />
+      </Route>
     </Routes>
   );
 }

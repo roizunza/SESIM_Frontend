@@ -8,26 +8,76 @@ const CapturistaModal = ({ isOpen, onClose, onVerify }) => {
   const [epsgConfirmed, setEpsgConfirmed] = useState(false);
   const [tipoIndicador, setTipoIndicador] = useState('');
   
-  /* Estados para guardar los 3 archivos obligatorios en memoria */
   const [archivo, setArchivo] = useState(null);
   const [estilo, setEstilo] = useState(null);
   const [documento, setDocumento] = useState(null);
 
+  const [dragActive, setDragActive] = useState({ a: false, b: false, c: false });
+  const [fileError, setFileError] = useState(null); 
+
   if (!isOpen) return null;
 
   const handleNext = () => {
-    /* Validacion estricta: Capa, Estilo, Documento y Confirmacion EPSG son obligatorios */
-    if (step === 1 && (!epsgConfirmed || !archivo || !estilo || !documento)) return; 
+    if (step === 1 && (!epsgConfirmed || !archivo || !documento)) return; 
     setStep(prev => Math.min(prev + 1, 3));
+    setFileError(null); 
   };
   
-  const handleBack = () => setStep(prev => Math.max(prev - 1, 1));
+  const handleBack = () => {
+    setStep(prev => Math.max(prev - 1, 1));
+    setFileError(null);
+  };
 
-  /* Handlers Drag & Drop */
-  const handleDropArchivo = (e) => { e.preventDefault(); if (e.dataTransfer.files[0]) setArchivo(e.dataTransfer.files[0]); };
-  const handleDropEstilo = (e) => { e.preventDefault(); if (e.dataTransfer.files[0]) setEstilo(e.dataTransfer.files[0]); };
-  const handleDropDocumento = (e) => { e.preventDefault(); if (e.dataTransfer.files[0]) setDocumento(e.dataTransfer.files[0]); };
-  const handleDragOver = (e) => e.preventDefault();
+  const isValidExtension = (fileName, allowedExtensions) => {
+    if (!fileName) return false;
+    const ext = `.${fileName.split('.').pop().toLowerCase()}`;
+    return allowedExtensions.includes(ext);
+  };
+
+  const handleDragOver = (e, zone) => {
+    e.preventDefault();
+    setDragActive({ ...dragActive, [zone]: true });
+  };
+  const handleDragLeave = (e, zone) => {
+    e.preventDefault();
+    setDragActive({ ...dragActive, [zone]: false });
+  };
+
+  const handleDropArchivo = (e) => {
+    e.preventDefault();
+    setDragActive({ ...dragActive, a: false });
+    const file = e.dataTransfer.files[0];
+    if (file && isValidExtension(file.name, ['.geojson', '.kml', '.gpkg', '.zip'])) {
+      setArchivo(file);
+      setFileError(null);
+    } else if (file) {
+      setFileError("Intente de nuevo. La capa espacial debe tener extensión .geojson, .kml, .gpkg o .zip");
+    }
+  };
+
+  const handleDropEstilo = (e) => {
+    e.preventDefault();
+    setDragActive({ ...dragActive, b: false });
+    const file = e.dataTransfer.files[0];
+    if (file && isValidExtension(file.name, ['.sld', '.qml'])) {
+      setEstilo(file);
+      setFileError(null);
+    } else if (file) {
+      setFileError("Intente de nuevo. El archivo de estilo debe tener extensión .sld o .qml");
+    }
+  };
+
+  const handleDropDocumento = (e) => {
+    e.preventDefault();
+    setDragActive({ ...dragActive, c: false });
+    const file = e.dataTransfer.files[0];
+    if (file && isValidExtension(file.name, ['.pdf'])) {
+      setDocumento(file);
+      setFileError(null);
+    } else if (file) {
+      setFileError("Intente de nuevo. El documento técnico debe ser formato .pdf");
+    }
+  };
 
   return (
     <>
@@ -46,37 +96,74 @@ const CapturistaModal = ({ isOpen, onClose, onVerify }) => {
 
         <div className="modal-drawer-content">
           
+          {/* PASO 1: CARGA DE ARCHIVOS */}
           {step === 1 && (
             <div className="wizard-step">
               <h4 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--c-guinda-dk)' }}>
                 <UploadCloud size={18} /> 1. Carga de Archivos
               </h4>
 
-              {/* Zona A: Capa Espacial */}
+              {fileError && (
+                <div style={{ marginBottom: '16px', padding: '12px', background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12px', color: '#991B1B', lineHeight: '1.4' }}>
+                    <strong><AlertTriangle size={14} style={{ display: 'inline', marginBottom: '-2px', marginRight: '4px' }}/> Error:</strong> {fileError}
+                  </span>
+                  <button onClick={() => setFileError(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#991B1B' }}>
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px' }}>
-                  A. Capa Espacial
+                  A. Capa Espacial <span style={{ color: '#EF4444' }}>*</span>
                 </label>
-                <div className="drag-drop-zone" onDrop={handleDropArchivo} onDragOver={handleDragOver} style={{ padding: '20px', borderColor: archivo ? 'var(--c-guinda)' : 'var(--border-color)', background: archivo ? 'rgba(107, 20, 40, 0.05)' : '#f9fafb' }}>
+                <div 
+                  className="drag-drop-zone" 
+                  onDrop={handleDropArchivo} 
+                  onDragOver={(e) => handleDragOver(e, 'a')} 
+                  onDragLeave={(e) => handleDragLeave(e, 'a')}
+                  style={{ 
+                    padding: '20px', 
+                    borderColor: archivo ? 'var(--c-guinda)' : dragActive.a ? 'var(--c-guinda)' : 'var(--border-color)', 
+                    background: archivo || dragActive.a ? 'rgba(159, 34, 65, 0.05)' : 'var(--c-bg)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
                   {archivo ? (
                     <>
                       <File size={24} color="var(--c-guinda)" />
-                      <p style={{ margin: '8px 0 4px', fontWeight: '600', color: 'var(--c-guinda)', fontSize: '13px' }}>{archivo.name}</p>
-                      <button className="btn-outline-guinda" onClick={() => setArchivo(null)} style={{ marginTop: '4px', padding: '4px 10px', fontSize: '11px' }}>Quitar</button>
+                      <p style={{ margin: '8px 0 8px', fontWeight: '600', color: 'var(--c-guinda)', fontSize: '13px' }}>{archivo.name}</p>
+                      <button className="btn-base btn-tertiary" onClick={() => setArchivo(null)} style={{ width: 'auto', height: '32px', fontSize: '12px', padding: '0 12px' }}>Quitar</button>
                     </>
                   ) : (
                     <>
-                      <UploadCloud size={20} color="var(--text-secondary)" />
-                      <p style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', margin: '8px 0' }}>Formatos: <strong>GeoJSON, KML, GeoPackage o .zip</strong></p>
-                      <label className="btn-outline-guinda" style={{ cursor: 'pointer', display: 'inline-block', padding: '4px 10px', fontSize: '11px' }}>
-                        Explorar <input type="file" style={{ display: 'none' }} onChange={(e) => setArchivo(e.target.files[0])} />
+                      <UploadCloud size={24} color="var(--text-secondary)" style={{ marginBottom: '8px' }} />
+                      <p style={{ fontSize: '12px', color: 'var(--text-primary)', textAlign: 'center', margin: '0 0 4px', fontWeight: '500' }}>Arrastra tus archivos aquí o</p>
+                      <p style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', margin: '0 0 12px' }}>Formatos: <strong>GeoJSON, KML, GeoPackage o .zip</strong></p>
+                      
+                      <label className="btn-base btn-secondary" style={{ cursor: 'pointer', width: 'auto', height: '36px', fontSize: '12px' }}>
+                        Explorar
+                        <input 
+                          type="file" 
+                          accept=".geojson,.kml,.gpkg,.zip" 
+                          style={{ display: 'none' }} 
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file && isValidExtension(file.name, ['.geojson', '.kml', '.gpkg', '.zip'])) {
+                              setArchivo(file);
+                              setFileError(null);
+                            } else if (file) {
+                              setFileError("Intente de nuevo. La capa espacial debe tener extensión .geojson, .kml, .gpkg o .zip");
+                            }
+                          }} 
+                        />
                       </label>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Advertencia EPSG */}
               <div style={{ marginBottom: '16px', padding: '12px', background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: '6px' }}>
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer' }}>
                   <input type="checkbox" checked={epsgConfirmed} onChange={(e) => setEpsgConfirmed(e.target.checked)} style={{ marginTop: '3px', cursor: 'pointer' }} />
@@ -86,48 +173,100 @@ const CapturistaModal = ({ isOpen, onClose, onVerify }) => {
                 </label>
               </div>
 
-              {/* Zona B: Archivo de Estilo */}
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px' }}>
-                  B. Archivo de Estilo
+                  B. Archivo de Estilo <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '400' }}>(Opcional)</span>
                 </label>
-                <div className="drag-drop-zone" onDrop={handleDropEstilo} onDragOver={handleDragOver} style={{ padding: '20px', borderColor: estilo ? 'var(--c-guinda)' : 'var(--border-color)', background: estilo ? 'rgba(107, 20, 40, 0.05)' : '#f9fafb' }}>
+                <div 
+                  className="drag-drop-zone" 
+                  onDrop={handleDropEstilo} 
+                  onDragOver={(e) => handleDragOver(e, 'b')} 
+                  onDragLeave={(e) => handleDragLeave(e, 'b')}
+                  style={{ 
+                    padding: '20px', 
+                    borderColor: estilo ? 'var(--c-guinda)' : dragActive.b ? 'var(--c-guinda)' : 'var(--border-color)', 
+                    background: estilo || dragActive.b ? 'rgba(159, 34, 65, 0.05)' : 'var(--c-bg)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
                   {estilo ? (
                     <>
                       <Palette size={24} color="var(--c-guinda)" />
-                      <p style={{ margin: '8px 0 4px', fontWeight: '600', color: 'var(--c-guinda)', fontSize: '13px' }}>{estilo.name}</p>
-                      <button className="btn-outline-guinda" onClick={() => setEstilo(null)} style={{ marginTop: '4px', padding: '4px 10px', fontSize: '11px' }}>Quitar</button>
+                      <p style={{ margin: '8px 0 8px', fontWeight: '600', color: 'var(--c-guinda)', fontSize: '13px' }}>{estilo.name}</p>
+                      <button className="btn-base btn-tertiary" onClick={() => setEstilo(null)} style={{ width: 'auto', height: '32px', fontSize: '12px', padding: '0 12px' }}>Quitar</button>
                     </>
                   ) : (
                     <>
-                      <Palette size={20} color="var(--text-secondary)" />
-                      <p style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', margin: '8px 0' }}>Formatos: <strong>.SLD o .QML</strong></p>
-                      <label className="btn-outline-guinda" style={{ cursor: 'pointer', display: 'inline-block', padding: '4px 10px', fontSize: '11px' }}>
-                        Explorar <input type="file" accept=".sld,.qml" style={{ display: 'none' }} onChange={(e) => setEstilo(e.target.files[0])} />
+                      <Palette size={24} color="var(--text-secondary)" style={{ marginBottom: '8px' }} />
+                      <p style={{ fontSize: '12px', color: 'var(--text-primary)', textAlign: 'center', margin: '0 0 4px', fontWeight: '500' }}>Arrastra tu archivo aquí o</p>
+                      <p style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', margin: '0 0 12px' }}>Formatos: <strong>.SLD o .QML</strong></p>
+                      
+                      <label className="btn-base btn-secondary" style={{ cursor: 'pointer', width: 'auto', height: '36px', fontSize: '12px' }}>
+                        Explorar 
+                        <input 
+                          type="file" 
+                          accept=".sld,.qml" 
+                          style={{ display: 'none' }} 
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file && isValidExtension(file.name, ['.sld', '.qml'])) {
+                              setEstilo(file);
+                              setFileError(null);
+                            } else if (file) {
+                              setFileError("Intente de nuevo. El archivo de estilo debe tener extensión .sld o .qml");
+                            }
+                          }} 
+                        />
                       </label>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Zona C: Expediente Técnico PDF */}
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px' }}>
-                  C. Expediente Técnico / Legal
+                  C. Expediente Técnico / Legal <span style={{ color: '#EF4444' }}>*</span>
                 </label>
-                <div className="drag-drop-zone" onDrop={handleDropDocumento} onDragOver={handleDragOver} style={{ padding: '20px', borderColor: documento ? 'var(--c-guinda)' : 'var(--border-color)', background: documento ? 'rgba(107, 20, 40, 0.05)' : '#f9fafb' }}>
+                <div 
+                  className="drag-drop-zone" 
+                  onDrop={handleDropDocumento} 
+                  onDragOver={(e) => handleDragOver(e, 'c')} 
+                  onDragLeave={(e) => handleDragLeave(e, 'c')}
+                  style={{ 
+                    padding: '20px', 
+                    borderColor: documento ? 'var(--c-guinda)' : dragActive.c ? 'var(--c-guinda)' : 'var(--border-color)', 
+                    background: documento || dragActive.c ? 'rgba(159, 34, 65, 0.05)' : 'var(--c-bg)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
                   {documento ? (
                     <>
                       <FileText size={24} color="var(--c-guinda)" />
-                      <p style={{ margin: '8px 0 4px', fontWeight: '600', color: 'var(--c-guinda)', fontSize: '13px' }}>{documento.name}</p>
-                      <button className="btn-outline-guinda" onClick={() => setDocumento(null)} style={{ marginTop: '4px', padding: '4px 10px', fontSize: '11px' }}>Quitar</button>
+                      <p style={{ margin: '8px 0 8px', fontWeight: '600', color: 'var(--c-guinda)', fontSize: '13px' }}>{documento.name}</p>
+                      <button className="btn-base btn-tertiary" onClick={() => setDocumento(null)} style={{ width: 'auto', height: '32px', fontSize: '12px', padding: '0 12px' }}>Quitar</button>
                     </>
                   ) : (
                     <>
-                      <FileText size={20} color="var(--text-secondary)" />
-                      <p style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', margin: '8px 0' }}>Formatos: <strong>.PDF</strong></p>
-                      <label className="btn-outline-guinda" style={{ cursor: 'pointer', display: 'inline-block', padding: '4px 10px', fontSize: '11px' }}>
-                        Explorar <input type="file" accept=".pdf" style={{ display: 'none' }} onChange={(e) => setDocumento(e.target.files[0])} />
+                      <FileText size={24} color="var(--text-secondary)" style={{ marginBottom: '8px' }} />
+                      <p style={{ fontSize: '12px', color: 'var(--text-primary)', textAlign: 'center', margin: '0 0 4px', fontWeight: '500' }}>Arrastra tu archivo aquí o</p>
+                      <p style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', margin: '0 0 12px' }}>Formatos: <strong>.PDF</strong></p>
+                      
+                      <label className="btn-base btn-secondary" style={{ cursor: 'pointer', width: 'auto', height: '36px', fontSize: '12px' }}>
+                        Explorar 
+                        <input 
+                          type="file" 
+                          accept=".pdf" 
+                          style={{ display: 'none' }} 
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file && isValidExtension(file.name, ['.pdf'])) {
+                              setDocumento(file);
+                              setFileError(null);
+                            } else if (file) {
+                              setFileError("Intente de nuevo. El documento técnico debe ser formato .pdf");
+                            }
+                          }} 
+                        />
                       </label>
                     </>
                   )}
@@ -136,39 +275,92 @@ const CapturistaModal = ({ isOpen, onClose, onVerify }) => {
             </div>
           )}
 
+          {/* PASO 2: FICHA TÉCNICA */}
           {step === 2 && (
             <div className="wizard-step">
               <h4 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--c-guinda-dk)' }}><FileText size={18} /> 2. Ficha Técnica Institucional</h4>
-              <div className="form-group"><label>Nombre de la Capa (Título)</label><input type="text" className="form-input" placeholder="Ej. Red Vial Primaria" /></div>
-              <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div><label>Categoría</label><select className="form-input"><option value="">Seleccione...</option>{catalogos.cat_categoria.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select></div>
-                <div><label>Cobertura Territorial</label><select className="form-input"><option value="">Seleccione...</option>{catalogos.cat_cobertura.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select></div>
+              
+              <div className="form-group">
+                <label>Nombre de la Capa</label>
+                <input type="text" className="form-input" placeholder="Ej. Nomenclatura exacta al catálogo de instrumentos" />
               </div>
-              <div className="form-group"><label>Instrumento de Origen</label><select className="form-input"><option value="">Seleccione el marco normativo...</option>{catalogos.cat_instrumento.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select></div>
+              
               <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div><label>Escala Responsable</label><select className="form-input"><option value="">Seleccione...</option>{catalogos.cat_responsable.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select></div>
-                <div><label>Periodicidad</label><select className="form-input"><option value="">Seleccione...</option>{catalogos.cat_periodicidad.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select></div>
+                <div>
+                  <label>Categoría</label>
+                  <select className="form-input"><option value="">Seleccione...</option>{catalogos.cat_categoria.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select>
+                </div>
+                <div>
+                  <label>Escala Territorial</label>
+                  <select className="form-input"><option value="">Seleccione...</option>{catalogos.cat_cobertura.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select>
+                </div>
               </div>
+
+              <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label>Instrumento de Origen</label>
+                  <select className="form-input"><option value="">Seleccione el marco normativo...</option>{catalogos.cat_instrumento.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select>
+                </div>
+                <div>
+                  <label>Periodicidad</label>
+                  <select className="form-input"><option value="">Seleccione...</option>{catalogos.cat_periodicidad.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select>
+                </div>
+              </div>
+              
               <div className="form-group">
                 <label>Eje de Evaluación</label>
                 <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
                   {catalogos.cat_eje_evaluacion.map(item => (
-                    <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '400', fontSize: '13px' }}><input type="radio" name="eje" value={item.id} onChange={(e) => setTipoIndicador(e.target.value)} /> {item.etiqueta}</label>
+                    <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '400', fontSize: '13px' }}>
+                      <input type="radio" name="eje" value={item.id} onChange={(e) => setTipoIndicador(e.target.value)} /> {item.etiqueta}
+                    </label>
                   ))}
                 </div>
               </div>
-              {tipoIndicador === 'sectorial' && (<div className="form-group"><label>Sector Asociado</label><select className="form-input"><option value="">Seleccione sector...</option>{catalogos.cat_sector.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select></div>)}
-              {tipoIndicador === 'desempeno' && (<div className="form-group"><label>Horizonte de Planeación</label><select className="form-input"><option value="">Seleccione horizonte...</option>{catalogos.cat_horizonte.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select></div>)}
-              <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div><label>Restricciones de Uso</label><select className="form-input"><option value="">Seleccione...</option><option value="publico">Público</option><option value="restringido">Restringido</option></select></div>
-                <div><label>Fuente (Institución/Año)</label><input type="text" className="form-input" placeholder="Ej. INEGI, 2024" /></div>
+              
+              {tipoIndicador === 'sectorial' && (
+                <div className="form-group">
+                  <label>Sector Asociado</label>
+                  <select className="form-input"><option value="">Seleccione sector...</option>{catalogos.cat_sector.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select>
+                </div>
+              )}
+              {tipoIndicador === 'desempeno' && (
+                <div className="form-group">
+                  <label>Horizonte de Planeación</label>
+                  <select className="form-input"><option value="">Seleccione horizonte...</option>{catalogos.cat_horizonte.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select>
+                </div>
+              )}
+              
+              <div className="form-group">
+                <label>Restricciones de Uso</label>
+                <select className="form-input"><option value="">Seleccione...</option><option value="publico">Público</option><option value="restringido">Restringido</option></select>
               </div>
+
+              {/* Nueva sección de Fuente con Institución y Año separados */}
+              <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+                <div>
+                  <label>Fuente (Institución Pública)</label>
+                  <select className="form-input">
+                    <option value="">Seleccione institución...</option>
+                    {catalogos.cat_instituciones.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label>Año</label>
+                  <select className="form-input">
+                    <option value="">Año...</option>
+                    {catalogos.cat_anios.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}
+                  </select>
+                </div>
+              </div>
+
             </div>
           )}
 
+          {/* PASO 3: VALIDACIÓN SQL */}
           {step === 3 && (
             <div className="wizard-step">
-              <h4 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--c-guinda-dk)' }}><Database size={18} /> 3. Validación de Estructura SQL</h4>
+              <h4 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--c-guinda-dk)' }}><Database size={18} /> 3. Validación de Datos</h4>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>Para proteger la integridad de la base de datos, su archivo debe cumplir con los lineamientos del diccionario de datos.</p>
               <div style={{ border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
@@ -189,11 +381,29 @@ const CapturistaModal = ({ isOpen, onClose, onVerify }) => {
         </div>
 
         <div className="modal-drawer-footer">
-          {step > 1 ? <button className="btn-outline-guinda" onClick={handleBack} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><ArrowLeft size={16} /> Atrás</button> : <div></div>}
+          {step > 1 ? (
+            <button className="btn-base btn-secondary" onClick={handleBack} style={{ width: 'auto' }}>
+              <ArrowLeft size={16} /> Atrás
+            </button>
+          ) : <div></div>}
+          
           {step < 3 ? (
-            <button className="btn-solid-guinda" onClick={handleNext} disabled={step === 1 && (!epsgConfirmed || !archivo || !estilo || !documento)} style={{ display: 'flex', alignItems: 'center', gap: '4px', opacity: (step === 1 && (!epsgConfirmed || !archivo || !estilo || !documento)) ? 0.5 : 1, cursor: (step === 1 && (!epsgConfirmed || !archivo || !estilo || !documento)) ? 'not-allowed' : 'pointer' }}>Siguiente <ArrowRight size={16} /></button>
+            <button 
+              className="btn-base btn-primary" 
+              onClick={handleNext} 
+              disabled={step === 1 && (!epsgConfirmed || !archivo || !documento)} 
+              style={{ width: 'auto' }}
+            >
+              Siguiente <ArrowRight size={16} />
+            </button>
           ) : (
-            <button className="btn-solid-guinda" onClick={() => onVerify(archivo?.name || 'capa_nueva')} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#10B981' }}><CheckCircle size={16} /> Verificar en geovisualizador</button>
+            <button 
+              className="btn-base btn-primary" 
+              onClick={() => onVerify(archivo?.name || 'capa_nueva')} 
+              style={{ width: 'auto', background: 'var(--status-aprobado)' }}
+            >
+              <CheckCircle size={16} /> Verificar en geovisualizador
+            </button>
           )}
         </div>
       </div>
