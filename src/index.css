@@ -67,10 +67,10 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); color: var(--c-guinda
 .text-muted { color: var(--text-secondary); font-size: 0.95rem; }
 
 /* =========================================================
-   NUEVOS COMPONENTES NORMALIZADOS 
+  COMPONENTES NORMALIZADOS 
    ========================================================= */
 
-/* --- PANELES FLOTANTES GLOBALES (Efecto Transparencia) --- */
+/* --- PANELES FLOTANTES GLOBALES --- */
 .floating-panel, 
 .floating-right-panel, 
 .audit-drawer {
@@ -108,3 +108,21 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); color: var(--c-guinda
 
 .btn-tertiary { background: var(--c-bg); color: var(--text-primary); border: 1px solid var(--border-color); }
 .btn-tertiary:hover:not(:disabled) { background: #E5E7EB; color: var(--c-guinda-dk); }
+
+/* 4. Botón Blanco Elevado (Acción Principal de Sidebar en el perfil de Capturista) */
+.btn-white {
+  background: var(--c-white);
+  color: var(--c-guinda);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+.btn-white:hover:not(:disabled) {
+  background: var(--c-bg);
+  transform: translateY(-1px);
+}
+.btn-white:disabled {
+  background: var(--c-bg);
+  color: var(--text-secondary);
+  opacity: 0.6;
+  cursor: not-allowed;
+}

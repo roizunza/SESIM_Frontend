@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserCircle, LogOut, ChevronDown, ChevronUp, Layers, ChevronLeft, ChevronRight, Plus, CheckCircle2 } from 'lucide-react';
 import './Capturista.css';
 
-const CapturistaSidebar = ({ isSidebarOpen, setIsSidebarOpen, onOpenModal, isVerifying, onFinalSubmit, capasEnBorradores, capasEnRevision, actionLog }) => {
+const CapturistaSidebar = ({ isSidebarOpen, setIsSidebarOpen, onOpenModal, isVerifying, onFinalSubmit, capasEnBorradores, capasEnRevision }) => {
   const navigate = useNavigate();
   const [bandejaOpen, setBandejaOpen] = useState(true);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -36,7 +36,7 @@ const CapturistaSidebar = ({ isSidebarOpen, setIsSidebarOpen, onOpenModal, isVer
         <div className="admin-nav-group">
           
           <div style={{ padding: '0 20px', marginBottom: '16px' }}>
-            <button className="btn-registro" onClick={onOpenModal} disabled={isVerifying} style={{ opacity: isVerifying ? 0.5 : 1 }}>
+            <button className="btn-base btn-white" onClick={onOpenModal} disabled={isVerifying} style={{ opacity: isVerifying ? 0.5 : 1 }}>
               <Plus size={18} /> Registrar Nuevo Indicador
             </button>
           </div>
@@ -72,7 +72,7 @@ const CapturistaSidebar = ({ isSidebarOpen, setIsSidebarOpen, onOpenModal, isVer
               </label>
 
               <button 
-                className="btn-solid-guinda" 
+                className="btn-base btn-primary" 
                 onClick={handleSubmitAndReset} 
                 disabled={!termsAccepted}
                 style={{ 
@@ -150,37 +150,6 @@ const CapturistaSidebar = ({ isSidebarOpen, setIsSidebarOpen, onOpenModal, isVer
                 </div>
               </div>
 
-            </div>
-          </div>
-
-          {/*BITÁCORA*/}
-          <div className="admin-nav-header" style={{ marginTop: '24px' }}>
-            <span className="nav-title">BITÁCORA
-            </span>
-          </div>
-          
-          <div style={{ padding: '0 20px', marginBottom: '24px' }}>
-            <div style={{ 
-              padding: '12px', 
-              background: 'rgba(116, 47, 47, 0.3)', 
-              borderRadius: '6px', 
-              borderLeft: '3px solid #10B981',
-              minHeight: '80px',
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              <span style={{ fontSize: '10px', color: '#d1d4da', fontFamily: 'monospace', display: 'block', marginBottom: '8px', letterSpacing: '0.05em' }}>
-                &gt; ACTIVIDAD
-              </span>
-              {actionLog ? (
-                <span style={{ fontSize: '11px', color: '#D1D5DB', fontFamily: 'monospace', lineHeight: '1.4', display: 'block' }}>
-                  {actionLog}
-                </span>
-              ) : (
-                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', fontStyle: 'italic', display: 'block' }}>
-                  En esta sección se muestran los logs del usuario capturista...
-                </span>
-              )}
             </div>
           </div>
 
