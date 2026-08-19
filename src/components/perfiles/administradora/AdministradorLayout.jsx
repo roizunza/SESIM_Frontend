@@ -10,14 +10,12 @@ import '../../geovisor/AdminMapViewer.css';
 import '../capturista/Capturista.css'; 
 import './Admin.css';
 
-/* Helper para capturar la instancia del mapa */
 const MapInstanceCapture = ({ setMapInstance }) => {
   const map = useMap();
   useEffect(() => { setMapInstance(map); }, [map, setMapInstance]);
   return null;
 };
 
-/* Componente para la herramienta de medicion lineal */
 const MeasureTool = ({ isMeasuring }) => {
   const [points, setPoints] = useState([]);
   const [distance, setDistance] = useState(0);
@@ -58,7 +56,6 @@ const MeasureTool = ({ isMeasuring }) => {
   );
 };
 
-/* JSON del Catalogo Operativo */
 const catalogos = {
   "cat_instrumento": [
     {"id": "lgmsv", "etiqueta": "Ley General de Movilidad y Seguridad Vial (LGMSV)"}, 
@@ -95,23 +92,19 @@ const CAMPECHE_BOUNDS = [[13.5, -97.0], [25.0, -83.0]];
 const AdministradorLayout = () => {
   const [mapInstance, setMapInstance] = useState(null);
   
-  /* Estados Generales de Paneles */
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [dashboardActivo, setDashboardActivo] = useState(false);
   const [isDictamenOpen, setIsDictamenOpen] = useState(false);
   
-  /* Estados de Datos y Capas */
   const [capaSimulada, setCapaSimulada] = useState('');
   const [capaActivaAuditoria, setCapaActivaAuditoria] = useState('');
   const [capasEnRevision, setCapasEnRevision] = useState(['red_ciclovias_v2', 'censo_paraderos_2026']);
   const [capasAprobadas, setCapasAprobadas] = useState(['red_vial_primaria']);
 
-  /* Estados de las Herramientas del Mapa */
   const [mapaBaseOpen, setMapaBaseOpen] = useState(false);
   const [activeBaseMap, setActiveBaseMap] = useState('cartoLight');
   const [isMeasuring, setIsMeasuring] = useState(false);
 
-  /* Logica de arrastre de la caja de herramientas */
   const [herramientasPos, setHerramientasPos] = useState({ x: 300, y: 24 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStartPos = useRef({ startX: 0, startY: 0, x: 0, y: 0 });
@@ -147,7 +140,6 @@ const AdministradorLayout = () => {
     }
   };
 
-  /* Handlers Operativos */
   const handleGenerarTablero = () => {
     setCapaSimulada('Red de Movilidad Estatal');
     setDashboardActivo(true);
@@ -173,10 +165,8 @@ const AdministradorLayout = () => {
   return (
     <div className="dashboard-fullscreen-container">
       
-      {/* CAPA 1: MAPA Y HERRAMIENTAS */}
       <div className={`dashboard-map-area ${isMeasuring ? 'measuring-mode' : ''}`}>
         
-        {/* CAJA DE HERRAMIENTAS UNIFICADA ARRASTRABLE */}
         <div className="draggable-wrapper" style={{ left: `${herramientasPos.x}px`, top: `${herramientasPos.y}px`, position: 'absolute', zIndex: 1000, display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: '8px' }}>
           
           <div className="floating-panel" style={{ position: 'relative', top: 'auto', left: 'auto', width: '280px', margin: 0 }}>
@@ -185,7 +175,7 @@ const AdministradorLayout = () => {
             </div>
 
             <div className="panel-content" style={{ borderBottom: '1px solid var(--surface-border)' }}>
-              <h5 style={{ margin: '0 0 12px', fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Simbología Activa</h5>
+              <h5 className="panel-section-title">Simbología Activa</h5>
               {capaActivaAuditoria || capaSimulada ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
                   <div style={{ width: '16px', height: '16px', backgroundColor: 'rgba(245, 158, 11, 0.4)', border: '2px solid #F59E0B', borderRadius: '2px' }}></div>
@@ -199,7 +189,7 @@ const AdministradorLayout = () => {
             </div>
 
             <div style={{ padding: '16px', borderBottom: '1px solid var(--surface-border)' }}>
-              <button className="btn-exportar" style={{ width: '100%', justifyContent: 'center' }}>
+              <button className="btn-base btn-tertiary">
                 <Printer size={16} /> Imprimir Plano
               </button>
             </div>
@@ -242,7 +232,6 @@ const AdministradorLayout = () => {
         </MapContainer>
       </div>
 
-      {/* CAPA 2: SIDEBAR */}
       <div className="floating-sidebar-wrapper">
         <AdministradorSidebar 
           isSidebarOpen={isSidebarOpen} 
@@ -254,7 +243,6 @@ const AdministradorLayout = () => {
         />
       </div>
 
-      {/* CAPA 3: CAJÓN DE DICTAMEN (Auditoría de Solicitudes) */}
       <PanelDictamen 
         capa={capaActivaAuditoria}
         isOpen={isDictamenOpen}
@@ -262,14 +250,12 @@ const AdministradorLayout = () => {
         onDictamen={procesarDictamen}
       />
 
-      {/* CAPA 4: KPIs DERECHA */}
       {dashboardActivo && (
-        <div className="floating-right-panel" style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
+        <div className="floating-right-panel" style={{ background: 'transparent', border: 'none', backdropFilter: 'none', boxShadow: 'none' }}>
           <DashboardKPIs capa={capaSimulada} />
         </div>
       )}
 
-      {/* CAPA 5: TABLERO OPERATIVO INFERIOR */}
       <div className="fullwidth-bottom-banner" style={{ left: isSidebarOpen ? '280px' : '0', transition: 'left 0.3s ease' }}>
         <div className="banner-filter-row">
           
@@ -307,13 +293,13 @@ const AdministradorLayout = () => {
           </div>
 
           <div className="filter-buttons-column">
-            <button className="btn-generar" onClick={handleGenerarTablero}>
+            <button className="btn-base btn-primary" onClick={handleGenerarTablero}>
               <Play size={16} fill="currentColor" /> Generar
             </button>
-            <button className="btn-tabla">
+            <button className="btn-base btn-secondary">
               <Table size={16} /> Ver tabla de atributos
             </button>
-            <button className="btn-exportar">
+            <button className="btn-base btn-tertiary">
               <Download size={16} /> Exportar
             </button>
           </div>

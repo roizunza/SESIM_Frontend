@@ -16,23 +16,23 @@
   --c-text:      #2D2D2D;
   --c-text-lt:   #53565A;
 
-  /* Typography (PEOTDU Campeche) */
+  /* Typography Original */
   --font-heading: 'Roboto Slab', Georgia, serif;
   --font-body:    'Inter', system-ui, -apple-system, sans-serif;
 
-  /* Primary Theme Palette (Light Default) */
-  --primary-blue: #9F2241;
-  --secondary-blue: #691C32;
-  --cyan: #9F2241;
-  --teal: #235B4E;
-  --light-green: #235B4E;
-  
+  /* Primary Theme Palette */
   --bg-color: #F5F4F2;
   --surface-color: #FFFFFF;
   --surface-border: #E5E7EB;
   --text-primary: #2D2D2D;
   --text-secondary: #53565A;
   --border-color: #E5E7EB;
+
+  /* Estados */
+  --status-borrador: var(--c-beige-dk);
+  --status-revision: var(--c-verde);
+  --status-aprobado: #10B981; 
+  --status-rechazado: #EF4444;
   
   /* Spacing */
   --spacing-xs: 0.25rem;
@@ -48,14 +48,10 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --transition: all 0.2s ease;
-  --backdrop-blur: none;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; scrollbar-width: none; }
+::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
 body {
   font-family: var(--font-body);
@@ -67,85 +63,48 @@ body {
   overflow-x: hidden;
 }
 
-/* Base Layout Classes */
-.app-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); color: var(--c-guinda-dk); }
+.text-muted { color: var(--text-secondary); font-size: 0.95rem; }
 
-.main-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
+/* =========================================================
+   NUEVOS COMPONENTES NORMALIZADOS 
+   ========================================================= */
 
-.page-content {
-  flex: 1;
-  padding: var(--spacing-xl);
-}
-
-/* Utilities */
-.flex { display: flex; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.gap-md { gap: var(--spacing-md); }
-
-/* Typography */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
-}
-
-h1 {
-  font-size: 2.25rem;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  color: var(--c-guinda);
-  margin-bottom: var(--spacing-sm);
-}
-
-h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--c-guinda-dk);
-}
-
-.text-muted {
-  color: var(--text-secondary);
-  font-size: 0.95rem;
-}
-
-/* Reusable Panel */
-.glass-panel {
-  background: var(--surface-color);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-}
-
-/* Hide Scrollbars */
-* {
-  scrollbar-width: none;
-}
-::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
-}
-
-/* Common Classes for Construction Modules */
-.construction-module {
-  margin-top: 2rem;
-  padding: 2rem;
-  background-color: var(--surface-color);
-  border-radius: var(--radius-lg);
+/* --- PANELES FLOTANTES GLOBALES (Efecto Transparencia) --- */
+.floating-panel, 
+.floating-right-panel, 
+.audit-drawer {
+  background: rgba(255, 255, 255, 0.92) !important; /* 92% de opacidad */
+  backdrop-filter: blur(8px); /* Efecto vidrio esmerilado */
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--border-color);
-  text-align: center;
 }
 
-.construction-module h3 {
-  color: var(--primary-blue);
-  margin-bottom: 1rem;
+/* --- TÍTULOS DE PANELES NORMALIZADOS --- */
+.panel-section-title {
+  margin: 0 0 12px 0;
+  font-size: 11px;
+  color: var(--c-guinda-dk); /* Más oscuro como pediste */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--font-heading);
+  font-weight: 700;
 }
+
+/* --- BOTONES NORMALIZADOS --- */
+.btn-base {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 44px; padding: 0 16px; border-radius: var(--radius-md);
+  font-weight: 600; font-size: 13px; font-family: var(--font-body);
+  cursor: pointer; transition: var(--transition); width: 100%;
+}
+
+.btn-primary { background: var(--c-guinda); color: var(--c-white); border: none; box-shadow: var(--shadow-sm); }
+.btn-primary:hover:not(:disabled) { background: var(--c-guinda-dk); transform: translateY(-1px); }
+.btn-primary:disabled { background: var(--c-gray-md); opacity: 0.6; cursor: not-allowed; }
+
+.btn-secondary { background: transparent; color: var(--c-guinda); border: 1px solid var(--c-guinda); }
+.btn-secondary:hover:not(:disabled) { background: rgba(159, 34, 65, 0.05); }
+
+.btn-tertiary { background: var(--c-bg); color: var(--text-primary); border: 1px solid var(--border-color); }
+.btn-tertiary:hover:not(:disabled) { background: #E5E7EB; color: var(--c-guinda-dk); }

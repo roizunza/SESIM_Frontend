@@ -1,6 +1,5 @@
 /* Admin.css - Estructura Fullscreen, Paneles Flotantes y Diseño Responsivo */
 
-/* Contenedor principal: ocupa todo el alto disponible */
 .dashboard-fullscreen-container {
   position: relative;
   width: 100%;
@@ -9,7 +8,6 @@
   background: var(--c-bg);
 }
 
-/* Mapa: ocupa el 100% absoluto de la pantalla */
 .dashboard-map-area {
   position: absolute;
   top: 0;
@@ -20,7 +18,6 @@
   background: #e5e5e5;
 }
 
-/* Envoltura para hacer que el Sidebar actual flote */
 .floating-sidebar-wrapper {
   position: absolute;
   top: 0;
@@ -30,7 +27,6 @@
   display: flex;
 }
 
-/* Panel Analítico Flotante (Derecha) */
 .floating-right-panel {
   position: absolute;
   top: 24px;
@@ -38,8 +34,8 @@
   width: 320px;
   max-height: calc(100% - 140px);
   background: var(--c-white);
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -47,7 +43,6 @@
   border: 1px solid var(--border-color);
 }
 
-/* Banner Inferior Full-Width */
 .fullwidth-bottom-banner {
   position: absolute;
   bottom: 0;
@@ -62,7 +57,6 @@
 }
 
 /* --- Catálogo Operativo (Banner Inferior) --- */
-/* Estructura Desktop: 2 columnas para filtros + 1 columna para botones */
 .banner-filter-row {
   display: grid;
   grid-template-columns: 1fr 1fr 220px;
@@ -95,18 +89,20 @@
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  font-family: var(--font-heading);
 }
 
 .filter-group select {
   padding: 12px 16px;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-size: 14px;
   color: var(--text-primary);
-  background-color: #f9fafb;
+  background-color: var(--c-bg);
   outline: none;
   cursor: pointer;
   appearance: none;
+  font-family: var(--font-body);
   background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2353565A%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
   background-repeat: no-repeat;
   background-position: right 14px top 50%;
@@ -116,7 +112,7 @@
 
 .filter-group select:focus {
   border-color: var(--c-guinda);
-  background-color: #fff;
+  background-color: var(--c-white);
   box-shadow: 0 0 0 3px rgba(159, 34, 65, 0.1);
 }
 
@@ -124,7 +120,7 @@
   width: 100%;
   height: 44px;
   padding: 0 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
@@ -133,13 +129,14 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  font-family: var(--font-body);
 }
 
 .btn-generar {
   background: var(--c-guinda);
-  color: #fff;
+  color: var(--c-white);
   border: none;
-  box-shadow: 0 4px 6px rgba(159, 34, 65, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-generar:hover {
@@ -158,61 +155,58 @@
 }
 
 .btn-exportar {
-  background: #f9fafb;
+  background: var(--c-bg);
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
 }
 
 .btn-exportar:hover {
-  background: #f3f4f6;
+  background: #E5E7EB;
   color: var(--text-primary);
-  border-color: #d1d5db;
 }
 
 /* =========================================
    DISEÑO RESPONSIVO (MEDIA QUERIES)
    ========================================= */
 
-/* Tablets / Pantallas medianas */
 @media (max-width: 1024px) {
   .banner-filter-row {
-    grid-template-columns: 1fr 1fr; /* Filtros ocupan ambas columnas */
+    grid-template-columns: 1fr 1fr; 
     grid-template-rows: auto;
     padding: 20px 24px;
   }
   
   .filter-buttons-column {
-    grid-column: 1 / 3; /* Los botones bajan a ocupar toda la fila */
+    grid-column: 1 / 3; 
     grid-row: auto;
-    flex-direction: row; /* Se ponen uno al lado del otro */
+    flex-direction: row; 
     margin-top: 8px;
   }
 }
 
-/* Móviles / Pantallas pequeñas */
 @media (max-width: 768px) {
   .banner-filter-row {
-    grid-template-columns: 1fr; /* Una sola columna para todo */
+    grid-template-columns: 1fr; 
     padding: 16px;
     grid-gap: 16px;
   }
   
   .filter-buttons-column {
     grid-column: 1 / 2;
-    flex-direction: column; /* Los botones se vuelven a apilar */
+    flex-direction: column; 
   }
 
   .fullwidth-bottom-banner {
-    left: 0 !important; /* El banner ignora el sidebar en móvil */
+    left: 0 !important; 
   }
 }
 
 /* --- Gráficas Geoespaciales (Dashboard Derecho) --- */
 .geo-card {
   background: var(--c-white);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   padding: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
@@ -228,14 +222,14 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  font-family: var(--font-heading);
 }
 
-/* Gráfica 1: Dispersión */
 .scatter-mockup {
   height: 80px;
-  background: #f9fafb;
-  border-left: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--c-bg);
+  border-left: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
   position: relative;
   border-radius: 0 0 0 4px;
 }
@@ -244,12 +238,11 @@
   position: absolute;
   width: 8px;
   height: 8px;
-  background: var(--c-guinda);
+  background: var(--c-dorado-dk);
   border-radius: 50%;
   opacity: 0.7;
 }
 
-/* Gráfica 2: Dona Dividida */
 .donut-container {
   display: flex;
   align-items: center;
@@ -261,7 +254,7 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: conic-gradient(var(--c-guinda) 0% 68%, #e5e7eb 68% 100%);
+  background: conic-gradient(var(--c-guinda) 0% 68%, var(--border-color) 68% 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -292,7 +285,6 @@
 .stat-row.primary { color: var(--c-guinda); font-weight: 700; }
 .stat-row.secondary { color: var(--text-secondary); font-weight: 600; }
 
-/* Gráfica 3: Barras Horizontales */
 .hbar-container {
   display: flex;
   flex-direction: column;
@@ -315,7 +307,7 @@
 
 .hbar-track {
   height: 6px;
-  background: #f3f4f6;
+  background: var(--c-bg);
   border-radius: 3px;
   width: 100%;
   overflow: hidden;
@@ -351,7 +343,7 @@
 .audit-drawer-header {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border-color);
-  background: #f9fafb;
+  background: var(--c-bg);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -372,6 +364,7 @@
   color: var(--text-secondary);
   cursor: pointer;
   border-bottom: 2px solid transparent;
+  font-family: var(--font-body);
 }
 
 .audit-tab.active {
@@ -390,7 +383,7 @@
 .audit-footer {
   padding: 20px 24px;
   border-top: 1px solid var(--border-color);
-  background: #fff;
+  background: var(--c-white);
   display: flex;
   flex-direction: column;
   gap: 12px;

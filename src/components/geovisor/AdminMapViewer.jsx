@@ -1,25 +1,22 @@
 import React from 'react';
 import CapturistaLayout from '../perfiles/capturista/CapturistaLayout';
 import AdministradorLayout from '../perfiles/administradora/AdministradorLayout';
+import AuditorLayout from '../perfiles/auditora/AuditorLayout'; // Asegúrate de que la carpeta se llame 'auditora'
 
 const AdminMapViewer = () => {
-  /* ¡CORRECCIÓN! Ahora sí lee el rol real que guardó tu Login en el navegador.
-     Si por alguna razón no hay rol, te manda al login o a capturista por defecto */
+  /* Lee el rol real que guardó tu Login en el navegador */
   const userRole = localStorage.getItem('sim_role') || 'capturista'; 
 
   // Renderizado condicional basado en el rol real del usuario
   switch (userRole) {
     case 'capturista':
       return <CapturistaLayout />;
-    case 'administradora': /* Asegúrate de que tu login guarde 'administradora' o 'administrador' según lo hayas programado */
+    case 'administradora': 
     case 'administrador':
       return <AdministradorLayout />;
     case 'auditor':
-      return (
-        <div style={{ padding: '40px', textAlign: 'center' }}>
-          <h2>Panel de Auditoría (En construcción)</h2>
-        </div>
-      );
+    case 'auditora': 
+      return <AuditorLayout />; 
     default:
       return <CapturistaLayout />;
   }
