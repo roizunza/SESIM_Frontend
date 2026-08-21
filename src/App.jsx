@@ -14,8 +14,9 @@ import AdminMapViewer from './components/geovisor/AdminMapViewer';
 
 import AdministradorLayout from './components/perfiles/administradora/AdministradorLayout';
 
-/* Componentes de Bitácora / Logs (Renombrado para evitar error de caché de Git en Vercel) */
+/* Componentes de Bitácora*/
 import BitacoraLogs from './components/logs/BitacoraLogs';
+
 
 function App() {
   return (
