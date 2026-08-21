@@ -14,8 +14,8 @@ import AdminMapViewer from './components/geovisor/AdminMapViewer';
 
 import AdministradorLayout from './components/perfiles/administradora/AdministradorLayout';
 
-/* Componentes de Bitácora / Logs */
-import Userlogs from './components/logs/Userlogs';
+/* Componentes de Bitácora / Logs (Renombrado para evitar error de caché de Git en Vercel) */
+import BitacoraLogs from './components/logs/BitacoraLogs';
 
 function App() {
   return (
@@ -45,10 +45,10 @@ function App() {
       {/* BLOQUE 4: Rutas de Bitácora (Envueltas en AdminLayout para mantener el Header) */}
       <Route element={<AdminLayout />}>
         {/* Vista personal del capturista */}
-        <Route path="/logs/user/:userId" element={<Userlogs />} />
+        <Route path="/logs/user/:userId" element={<BitacoraLogs />} />
         
         {/* Vista global de la administradora (por ahora reutilizamos el mismo componente) */}
-        <Route path="/logs/global" element={<Userlogs />} />
+        <Route path="/logs/global" element={<BitacoraLogs />} />
       </Route>
     </Routes>
   );
