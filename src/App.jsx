@@ -15,7 +15,7 @@ import AdminMapViewer from './components/geovisor/AdminMapViewer';
 import AdministradorLayout from './components/perfiles/administradora/AdministradorLayout';
 
 /* Componentes de Bitácora*/
-import BitacoraLogs from './components/logs/BitacoraLogs';
+import BitacoraLogs from './components/Bitacora/BitacoraLogs';
 
 
 function App() {
