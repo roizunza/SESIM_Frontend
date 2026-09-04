@@ -7,7 +7,7 @@ export default function Header() {
 
   /* Se lee el rol y el ID del usuario activo desde el almacenamiento local */
   const userRole = localStorage.getItem('sim_role');
-  const userId = localStorage.getItem('sim_user_id') || 'usuario_actual';
+  const userId = localStorage.getItem('sim_user_id') || 'institucional';
 
   const handleImgError = (e) => {
     e.currentTarget.style.display = 'none';
@@ -30,13 +30,16 @@ export default function Header() {
   /* Enrutamiento dinamico de la bitacora basado en el perfil y credencial */
   const handleAbrirBitacora = () => {
     if (userRole === 'administradora' || userRole === 'administrador') {
-      /* La administradora requiere acceso a la vista integral */
-      navigate('/logs/global');
+      navigate(`/logs/administradora/${userId}`);
     } else if (userRole === 'capturista') {
-      /* El capturista solo accede a la vista filtrada por su identificador */
-      navigate(`/logs/user/${userId}`);
+      navigate(`/logs/capturista/${userId}`);
+    } else if (userRole === 'auditora' || userRole === 'auditor') {
+      navigate(`/logs/auditora/${userId}`);
     }
   };
+
+  /* Validacion para renderizar el boton de historial */
+  const hasLogAccess = ['administradora', 'administrador', 'capturista', 'auditora', 'auditor'].includes(userRole);
 
   return (
     <header className="header" role="banner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 24px', backgroundColor: 'var(--c-white)', borderBottom: '1px solid var(--border-color)' }}>
@@ -58,12 +61,12 @@ export default function Header() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           
           {/* El boton de bitacora se expone unicamente para perfiles con permisos de log */}
-          {(userRole === 'administradora' || userRole === 'administrador' || userRole === 'capturista') && (
+          {hasLogAccess && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderRight: '1px solid var(--border-color)', paddingRight: '16px' }}>
               <button 
                 onClick={handleAbrirBitacora}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                title={userRole === 'capturista' ? "Mi Historial de Actividad" : "Bitácora de Auditoría Global"}
+                title="Ver Historial de Actividad"
               >
                 <History size={20} />
               </button>

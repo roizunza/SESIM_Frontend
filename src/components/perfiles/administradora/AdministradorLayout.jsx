@@ -19,24 +19,16 @@ const catalogos = {
     {"id": "lgmsv", "etiqueta": "Ley General de Movilidad y Seguridad Vial (LGMSV)"}, 
     {"id": "enamov", "etiqueta": "Estrategia Nacional de Movilidad (ENAMOV)"}, 
     {"id": "ley_estatal", "etiqueta": "Ley de Movilidad del Estado de Campeche"}, 
-    {"id": "eemsv", "etiqueta": "Estrategia Estatal de Movilidad y Seguridad Vial"}, 
-    {"id": "ped", "etiqueta": "Plan Estatal de Desarrollo (PED)"}, 
-    {"id": "pimus", "etiqueta": "PIMUS"}, 
-    {"id": "pmduot", "etiqueta": "PMDUOT"}
+    {"id": "pimus", "etiqueta": "PIMUS"}
   ],
   "cat_escala": [
     {"id": "estatal", "etiqueta": "Estatal"}, 
-    {"id": "municipal", "etiqueta": "Municipal"}, 
-    {"id": "regional", "etiqueta": "Regional"}, 
-    {"id": "localidad", "etiqueta": "Localidad / Zona Urbana"}
+    {"id": "municipal", "etiqueta": "Municipal"}
   ],
   "cat_eje_evaluacion": [
-    {"id": "sectorial", "etiqueta": "Sectorial"}, 
-    {"id": "desempeno", "etiqueta": "De Desempeño"}
+    {"id": "sectorial", "etiqueta": "Sectorial"}
   ]
 };
-
-const CAMPECHE_BOUNDS = [[13.5, -97.0], [25.0, -83.0]];
 
 const AdministradorLayout = () => {
   const mapDiv = useRef(null);
@@ -50,8 +42,19 @@ const AdministradorLayout = () => {
   
   const [capaSimulada, setCapaSimulada] = useState('');
   const [capaActivaAuditoria, setCapaActivaAuditoria] = useState('');
-  const [capasEnRevision, setCapasEnRevision] = useState(['red_ciclovias_v2', 'censo_paraderos_2026']);
-  const [capasAprobadas, setCapasAprobadas] = useState(['red_vial_primaria']);
+
+  // Estructura actualizada para Cartografía e Instrumentos
+  const [cartografiaList, setCartografiaList] = useState([
+    { id: 'red_ciclovias_v2', estatus: 'revision' },
+    { id: 'censo_paraderos_2026', estatus: 'revision' },
+    { id: 'pimus_municipio_carmen', estatus: 'revision' },
+    { id: 'red_vial_primaria', estatus: 'aprobado' }
+  ]);
+
+  const [instrumentosList, setInstrumentosList] = useState([
+    { id: 'PIMUS_Carmen_2025.pdf', estatus: 'revision' },
+    { id: 'Programa_Movilidad_Estatal_2024.pdf', estatus: 'revision' }
+  ]);
 
   const [mapaBaseOpen, setMapaBaseOpen] = useState(false);
   const [activeBaseMap, setActiveBaseMap] = useState('gray-vector');
@@ -82,7 +85,6 @@ const AdministradorLayout = () => {
     return () => { window.removeEventListener('mousemove', handleMouseMove); window.removeEventListener('mouseup', handleMouseUp); };
   }, [isDragging]);
 
-  /* Inicialización Segura del Mapa ArcGIS */
   useEffect(() => {
     let view;
     let isMounted = true;
@@ -95,17 +97,14 @@ const AdministradorLayout = () => {
         map: map,
         center: [-90.5, 19.3], 
         zoom: 8,
-        ui: { components: [] } // <-- Igual, vacío.
+        ui: { components: [] }
       });
 
       const gLayer = new GraphicsLayer();
       map.add(gLayer);
 
       view.when(() => {
-        if (!isMounted) {
-          view.destroy();
-          return;
-        }
+        if (!isMounted) { view.destroy(); return; }
         setViewInstance(view);
         setGraphicsLayer(gLayer);
       });
@@ -113,21 +112,16 @@ const AdministradorLayout = () => {
 
     return () => {
       isMounted = false;
-      if (view) {
-        view.container = null; 
-        view.destroy();
-      }
+      if (view) { view.container = null; view.destroy(); }
     };
   }, []);
 
-  /* Actualizar Mapa Base */
   useEffect(() => {
     if (viewInstance && activeBaseMap) {
       viewInstance.map.basemap = activeBaseMap;
     }
   }, [activeBaseMap, viewInstance]);
 
-  /* Control de la herramienta de Medición de Esri */
   useEffect(() => {
     if (!viewInstance) return;
 
@@ -145,7 +139,6 @@ const AdministradorLayout = () => {
     }
   }, [isMeasuring, viewInstance]);
 
-  /* Renderizado de Capas Geométricas */
   useEffect(() => {
     if (graphicsLayer && (capaActivaAuditoria || capaSimulada)) {
       graphicsLayer.removeAll();
@@ -156,7 +149,7 @@ const AdministradorLayout = () => {
 
       const fillSymbol = {
         type: "simple-fill",
-        color: [245, 158, 11, 0.3], // Naranja/Ambar
+        color: [245, 158, 11, 0.3], 
         outline: { color: [245, 158, 11, 1], width: 4 }
       };
 
@@ -177,13 +170,13 @@ const AdministradorLayout = () => {
     if (viewInstance) viewInstance.goTo({ center: [-90.53, 19.85], zoom: 12 }, { duration: 1500 });
   };
 
+  // Función actualizada: Cambia el estatus en lugar de borrar la capa
   const procesarDictamen = (decision, comentario) => {
-    if (decision === 'aprobar') {
-      setCapasEnRevision(prev => prev.filter(c => c !== capaActivaAuditoria));
-      setCapasAprobadas(prev => [capaActivaAuditoria, ...prev]);
-    } else {
-      setCapasEnRevision(prev => prev.filter(c => c !== capaActivaAuditoria));
-    }
+    const nuevoEstatus = decision === 'aprobar' ? 'aprobado' : 'rechazado';
+    
+    setCartografiaList(prev => prev.map(c => c.id === capaActivaAuditoria ? { ...c, estatus: nuevoEstatus } : c));
+    setInstrumentosList(prev => prev.map(c => c.id === capaActivaAuditoria ? { ...c, estatus: nuevoEstatus } : c));
+    
     setIsDictamenOpen(false);
     setCapaActivaAuditoria('');
   };
@@ -193,11 +186,9 @@ const AdministradorLayout = () => {
 
   return (
     <div className="dashboard-fullscreen-container">
-      
       <div className={`dashboard-map-area ${isMeasuring ? 'measuring-mode' : ''}`}>
         
         <div className="draggable-wrapper" style={{ left: `${herramientasPos.x}px`, top: `${herramientasPos.y}px`, position: 'absolute', zIndex: 1000, display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: '8px' }}>
-          
           <div className="floating-panel" style={{ position: 'relative', top: 'auto', left: 'auto', width: '280px', margin: 0 }}>
             <div className="panel-header drag-handle" onMouseDown={handleMouseDown}>
               <List size={18} /><h4>Herramientas del Mapa</h4>
@@ -218,9 +209,7 @@ const AdministradorLayout = () => {
             </div>
 
             <div style={{ padding: '16px', borderBottom: '1px solid var(--surface-border)' }}>
-              <button className="btn-base btn-tertiary">
-                <Printer size={16} /> Imprimir Plano
-              </button>
+              <button className="btn-base btn-tertiary"><Printer size={16} /> Imprimir Plano</button>
             </div>
 
             <div className="accordion-section">
@@ -253,8 +242,8 @@ const AdministradorLayout = () => {
         <AdministradorSidebar 
           isSidebarOpen={isSidebarOpen} 
           setIsSidebarOpen={setIsSidebarOpen}
-          capasEnRevision={capasEnRevision} 
-          capasAprobadas={capasAprobadas}
+          cartografiaList={cartografiaList} 
+          instrumentosList={instrumentosList}
           onSelectCapa={handleSelectCapaAuditoria}
           capaActiva={capaActivaAuditoria}
         />
@@ -278,52 +267,29 @@ const AdministradorLayout = () => {
           
           <div className="filter-group">
             <label>Instrumento Normativo</label>
-            <select>
-              <option value="">Seleccione instrumento...</option>
-              {catalogos.cat_instrumento.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}
-            </select>
+            <select><option value="">Seleccione instrumento...</option>{catalogos.cat_instrumento.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select>
           </div>
-
           <div className="filter-group">
             <label>Escala Territorial</label>
-            <select>
-              <option value="">Seleccione escala...</option>
-              {catalogos.cat_escala.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}
-            </select>
+            <select><option value="">Seleccione escala...</option>{catalogos.cat_escala.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select>
           </div>
-
           <div className="filter-group">
             <label>Eje de Evaluación</label>
-            <select>
-              <option value="">Seleccione eje...</option>
-              {catalogos.cat_eje_evaluacion.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}
-            </select>
+            <select><option value="">Seleccione eje...</option>{catalogos.cat_eje_evaluacion.map(item => (<option key={item.id} value={item.id}>{item.etiqueta}</option>))}</select>
           </div>
-
           <div className="filter-group">
             <label>Indicador</label>
-            <select>
-              <option value="">Seleccione indicador...</option>
-              <option>Cobertura de Ciclovías</option>
-              <option>Siniestralidad Vial</option>
-            </select>
+            <select><option value="">Seleccione indicador...</option><option>Cobertura de Ciclovías</option></select>
           </div>
 
           <div className="filter-buttons-column">
-            <button className="btn-base btn-primary" onClick={handleGenerarTablero}>
-              <Play size={16} fill="currentColor" /> Generar
-            </button>
-            <button className="btn-base btn-secondary">
-              <Table size={16} /> Ver tabla de atributos
-            </button>
-            <button className="btn-base btn-tertiary">
-              <Download size={16} /> Exportar
-            </button>
+            <button className="btn-base btn-primary" onClick={handleGenerarTablero}><Play size={16} fill="currentColor" /> Generar</button>
+            <button className="btn-base btn-secondary"><Table size={16} /> Ver tabla de atributos</button>
+            <button className="btn-base btn-tertiary"><Download size={16} /> Exportar</button>
           </div>
 
         </div>
       </div>
-
     </div>
   );
 };

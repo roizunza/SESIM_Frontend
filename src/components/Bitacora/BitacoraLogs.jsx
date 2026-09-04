@@ -73,7 +73,7 @@ export default function BitacoraLogs() {
   const [viewMode, setViewMode] = useState('feed'); // 'tabla' o 'feed'
 
   // El escudo protector: revisamos la URL para saber qué vista mostrar
-  const isCapturistaView = location.pathname.includes('/capturista');
+  const isCapturistaView = location.pathname.includes('/capturista') || location.pathname.includes('/administradora');
 
   /* =========================================================================
      HELPERS VISUALES (Ambas vistas)
