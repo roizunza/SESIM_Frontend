@@ -1,38 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MapContainer, TileLayer, ScaleControl, GeoJSON, useMap } from 'react-leaflet';
+import Map from "@arcgis/core/Map";
+import MapView from "@arcgis/core/views/MapView";
+import GraphicsLayer from "@arcgis/core/layers/GraphicsLayer";
+import Graphic from "@arcgis/core/Graphic";
+import Polygon from "@arcgis/core/geometry/Polygon";
 import AuditorSidebar from './AuditorSidebar';
-import { Download, UploadCloud, XCircle, CheckCircle, List, Map, ChevronDown, ChevronUp, Plus, Minus } from 'lucide-react';
-import 'leaflet/dist/leaflet.css';
+import { Download, UploadCloud, XCircle, CheckCircle, List, Map as MapIcon, ChevronDown, ChevronUp, Plus, Minus } from 'lucide-react';
+import '@arcgis/core/assets/esri/themes/light/main.css';
 import '../../geovisor/AdminMapViewer.css';
 import '../capturista/Capturista.css'; 
 import '../administradora/Admin.css';
 import './Auditor.css';
 
-/* Helper para capturar la instancia del mapa */
-const MapInstanceCapture = ({ setMapInstance }) => {
-  const map = useMap();
-  useEffect(() => { setMapInstance(map); }, [map, setMapInstance]);
-  return null;
-};
-
-const MapFlyTo = ({ capaActiva }) => {
-  const map = useMap();
-  useEffect(() => {
-    if (capaActiva) map.flyTo([19.83, -90.54], 11, { duration: 1.5 });
-  }, [capaActiva, map]);
-  return null;
-};
-
-const CAMPECHE_BOUNDS = [[13.5, -97.0], [25.0, -83.0]];
-
 const AuditorLayout = () => {
-  const [mapInstance, setMapInstance] = useState(null);
+  const mapDiv = useRef(null);
+  const [viewInstance, setViewInstance] = useState(null);
+  const [graphicsLayer, setGraphicsLayer] = useState(null);
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [capaActivaAuditoria, setCapaActivaAuditoria] = useState('');
 
-  /* Herramientas de Mapa */
   const [mapaBaseOpen, setMapaBaseOpen] = useState(false);
-  const [activeBaseMap, setActiveBaseMap] = useState('cartoLight');
+  const [activeBaseMap, setActiveBaseMap] = useState('gray-vector');
 
   /* Logica de arrastre de la caja de herramientas */
   const [herramientasPos, setHerramientasPos] = useState({ x: 300, y: 24 });
@@ -53,25 +42,114 @@ const AuditorLayout = () => {
       });
     };
     const handleMouseUp = () => setIsDragging(false);
+    
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     }
-    return () => { window.removeEventListener('mousemove', handleMouseMove); window.removeEventListener('mouseup', handleMouseUp); };
+    
+    return () => { 
+      window.removeEventListener('mousemove', handleMouseMove); 
+      window.removeEventListener('mouseup', handleMouseUp); 
+    };
   }, [isDragging]);
 
-  const renderBaseMap = () => {
-    switch (activeBaseMap) {
-      case 'cartoLight': return <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />;
-      case 'cartoDark': return <TileLayer url="http://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png" />;
-      case 'googleTer': return <TileLayer url="https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}" />;
-      case 'googleSat': return <TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" />;
-      default: return null;
+  /* Inicializacion segura del mapa de ArcGIS con bandera de montaje */
+  useEffect(() => {
+    let view;
+    let isMounted = true;
+
+    if (mapDiv.current) {
+      const map = new Map({
+        basemap: "gray-vector" 
+      });
+
+      view = new MapView({
+        container: mapDiv.current,
+        map: map,
+        center: [-90.5, 19.3], 
+        zoom: 8,
+        ui: { components: [] } 
+      });
+
+      const gLayer = new GraphicsLayer();
+      map.add(gLayer);
+
+      view.when(() => {
+        if (!isMounted) {
+          view.destroy();
+          return;
+        }
+        setViewInstance(view);
+        setGraphicsLayer(gLayer);
+      });
     }
-  };
+
+    return () => {
+      isMounted = false;
+      if (view) {
+        view.container = null; 
+        view.destroy();
+      }
+    };
+  }, []);
+
+  /* Actualizacion de Mapa Base */
+  useEffect(() => {
+    if (viewInstance && activeBaseMap) {
+      viewInstance.map.basemap = activeBaseMap;
+    }
+  }, [activeBaseMap, viewInstance]);
+
+  /* Vuelo a la capa activa */
+  useEffect(() => {
+    if (viewInstance && capaActivaAuditoria) {
+      viewInstance.goTo({
+        center: [-90.54, 19.83],
+        zoom: 11
+      }, { duration: 1500 });
+    }
+  }, [capaActivaAuditoria, viewInstance]);
+
+  /* Renderizado del poligono temporal */
+  useEffect(() => {
+    if (graphicsLayer && capaActivaAuditoria) {
+      graphicsLayer.removeAll();
+      
+      const polygon = new Polygon({
+        rings: [[[-90.58, 19.82], [-90.48, 19.82], [-90.48, 19.88], [-90.58, 19.88], [-90.58, 19.82]]]
+      });
+
+      const fillSymbol = {
+        type: "simple-fill",
+        color: [107, 114, 128, 0.2],
+        outline: {
+          color: [107, 114, 128, 1],
+          width: 2
+        }
+      };
+
+      const polygonGraphic = new Graphic({
+        geometry: polygon,
+        symbol: fillSymbol
+      });
+
+      graphicsLayer.add(polygonGraphic);
+    } else if (graphicsLayer) {
+      graphicsLayer.removeAll();
+    }
+  }, [capaActivaAuditoria, graphicsLayer]);
 
   const handleSelectCapa = (nombreCapa) => {
     setCapaActivaAuditoria(nombreCapa);
+  };
+
+  const zoomIn = () => {
+    if (viewInstance) viewInstance.goTo({ zoom: viewInstance.zoom + 1 });
+  };
+
+  const zoomOut = () => {
+    if (viewInstance) viewInstance.goTo({ zoom: viewInstance.zoom - 1 });
   };
 
   return (
@@ -107,15 +185,15 @@ const AuditorLayout = () => {
 
             <div className="accordion-section">
               <button className="accordion-header" onClick={() => setMapaBaseOpen(!mapaBaseOpen)}>
-                <div className="header-title"><Map size={16} /><span>Mapa Base</span></div>
+                <div className="header-title"><MapIcon size={16} /><span>Mapa Base</span></div>
                 {mapaBaseOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
               <div className={`accordion-content ${mapaBaseOpen ? 'open' : ''}`}>
                 <div className="base-map-grid" style={{ marginTop: '8px' }}>
-                  <button className={`base-map-btn ${activeBaseMap === 'cartoLight' ? 'active' : ''}`} onClick={() => setActiveBaseMap('cartoLight')}>Carto Light</button>
-                  <button className={`base-map-btn ${activeBaseMap === 'cartoDark' ? 'active' : ''}`} onClick={() => setActiveBaseMap('cartoDark')}>Carto Dark</button>
-                  <button className={`base-map-btn ${activeBaseMap === 'googleTer' ? 'active' : ''}`} onClick={() => setActiveBaseMap('googleTer')}>Google Terrain</button>
-                  <button className={`base-map-btn ${activeBaseMap === 'googleSat' ? 'active' : ''}`} onClick={() => setActiveBaseMap('googleSat')}>Google Sat</button>
+                  <button className={`base-map-btn ${activeBaseMap === 'gray-vector' ? 'active' : ''}`} onClick={() => setActiveBaseMap('gray-vector')}>Carto Light</button>
+                  <button className={`base-map-btn ${activeBaseMap === 'dark-gray-vector' ? 'active' : ''}`} onClick={() => setActiveBaseMap('dark-gray-vector')}>Carto Dark</button>
+                  <button className={`base-map-btn ${activeBaseMap === 'terrain' ? 'active' : ''}`} onClick={() => setActiveBaseMap('terrain')}>Google Terrain</button>
+                  <button className={`base-map-btn ${activeBaseMap === 'satellite' ? 'active' : ''}`} onClick={() => setActiveBaseMap('satellite')}>Google Sat</button>
                 </div>
               </div>
             </div>
@@ -123,24 +201,13 @@ const AuditorLayout = () => {
 
           {/* Botones de zoom */}
           <div className="external-toolbar" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <button onClick={() => mapInstance?.zoomIn()} title="Acercar"><Plus size={16} /></button>
-            <button onClick={() => mapInstance?.zoomOut()} title="Alejar"><Minus size={16} /></button>
+            <button onClick={zoomIn} title="Acercar"><Plus size={16} /></button>
+            <button onClick={zoomOut} title="Alejar"><Minus size={16} /></button>
           </div>
         </div>
 
-        <MapContainer center={[19.3, -90.5]} zoom={8} minZoom={7} maxBounds={CAMPECHE_BOUNDS} zoomControl={false} style={{ width: '100%', height: '100%', zIndex: 1 }} preferCanvas={true}>
-          <MapInstanceCapture setMapInstance={setMapInstance} />
-          {renderBaseMap()}
-          <MapFlyTo capaActiva={capaActivaAuditoria} />
-          {capaActivaAuditoria && (
-            <GeoJSON 
-              key={capaActivaAuditoria} 
-              data={{ type: "Feature", geometry: { type: "Polygon", coordinates: [[[-90.58, 19.82], [-90.48, 19.82], [-90.48, 19.88], [-90.58, 19.88], [-90.58, 19.82]]] } }} 
-              pathOptions={{ color: '#6B7280', weight: 2, fillColor: '#6B7280', fillOpacity: 0.2 }} 
-            />
-          )}
-          <ScaleControl position="bottomleft" imperial={false} />
-        </MapContainer>
+        {/* CONTENEDOR DEL MAPA */}
+        <div ref={mapDiv} style={{ width: '100%', height: '100%', zIndex: 1, outline: 'none' }} />
       </div>
 
       {/* CAPA 2: SIDEBAR */}
@@ -153,7 +220,7 @@ const AuditorLayout = () => {
         />
       </div>
 
-      {/* CAPA 3: PANEL DE TRAZABILIDAD (Línea de Tiempo) */}
+      {/* CAPA 3: PANEL DE TRAZABILIDAD */}
       {capaActivaAuditoria && (
         <div className="floating-right-panel" style={{ width: '400px', height: 'calc(100% - 48px)', bottom: '24px' }}>
           
@@ -162,14 +229,12 @@ const AuditorLayout = () => {
               <span className="panel-section-title" style={{ margin: 0 }}>LOG DE ACTIVIDAD</span>
               <h3 style={{ margin: '4px 0 0', fontSize: '15px', color: 'var(--text-primary)' }}>{capaActivaAuditoria}</h3>
             </div>
-            {/* Aplicación del botón normalizado */}
             <button className="btn-base btn-tertiary" style={{ width: 'auto', padding: '0 12px', height: '36px' }}>
               <Download size={14} /> PDF
             </button>
           </div>
 
           <div className="timeline-container">
-            
             <div className="timeline-item">
               <div className="timeline-icon approve"><CheckCircle size={16} /></div>
               <div className="timeline-content">
@@ -213,11 +278,9 @@ const AuditorLayout = () => {
                 <p style={{ margin: 0, fontSize: '13px' }}>Carga inicial del archivo .geojson y metadatos.</p>
               </div>
             </div>
-
           </div>
         </div>
       )}
-
     </div>
   );
 };
