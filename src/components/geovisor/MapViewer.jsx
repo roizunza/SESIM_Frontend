@@ -1,49 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, GeoJSON, ZoomControl, LayersControl, useMap } from 'react-leaflet';
+import React, { useState, useRef, useEffect } from 'react';
+import Map from "@arcgis/core/Map";
+import MapView from "@arcgis/core/views/MapView";
+import GeoJSONLayer from "@arcgis/core/layers/GeoJSONLayer";
+import GroupLayer from "@arcgis/core/layers/GroupLayer";
 import { ChevronLeft, ChevronRight, Layers } from 'lucide-react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import '@arcgis/core/assets/esri/themes/light/main.css';
 import './MapViewer.css';
 import { cargarMapaBase } from '../../lib/mapaBase';
-import { toPathOptions, toPointLayer } from '../../lib/leafletSymbology';
-
-// Helper component to capture Leaflet map instance
-const MapInstanceCapture = ({ setMapInstance }) => {
-  const map = useMap();
-  useEffect(() => {
-    setMapInstance(map);
-  }, [map, setMapInstance]);
-  return null;
-};
 
 const YEARS = [1980, 2000, 2010, 2016, 2020];
-const CAMPECHE_BOUNDS = [
-  [13.5, -97.0], // Amplio límite Sudoeste (Chiapas/Oaxaca/Golfo)
-  [25.0, -83.0]  // Amplio límite Noreste (Yucatán/Caribe)
-];
 
 const MapViewer = () => {
-  const [limEst, setLimEst] = useState(null);
-  const [limMun, setLimMun] = useState(null);
-  const [crecUrb, setCrecUrb] = useState(null);
-  const [mapInstance, setMapInstance] = useState(null);
+  const mapDiv = useRef(null);
+  const layersRef = useRef({});
+  const [viewInstance, setViewInstance] = useState(null);
+  
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [activeBaseLayer, setActiveBaseLayer] = useState('claro');
   
   const [showCrecUrb, setShowCrecUrb] = useState(false);
   const [showLocRur, setShowLocRur] = useState(false);
-  const [locRur, setLocRur] = useState(null);
   const [showRedVial, setShowRedVial] = useState(false);
-  const [redVial, setRedVial] = useState(null);
   const [showViaFerrea, setShowViaFerrea] = useState(false);
-  const [viaFerrea, setViaFerrea] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // Mapa Base del geovisor PEOTDU: 13 capas con la simbología real de QGIS.
-  const [mapaBase, setMapaBase] = useState(null);
+  // Mapa Base del geovisor PEOTDU
+  const [mapaBaseData, setMapaBaseData] = useState([]);
   const [showMapaBase, setShowMapaBase] = useState(true);
 
-  // Evolution options for Crecimiento Urbano
+  // Opciones de Evolución (Crecimiento Urbano)
   const [startYear, setStartYear] = useState(1980);
   const [endYear, setEndYear] = useState(2020);
 
@@ -88,77 +73,172 @@ const MapViewer = () => {
     }
   };
 
+  /* Inicialización Segura del Mapa ArcGIS (Con candado antierrores) */
   useEffect(() => {
-    // Load local GeoJSON data
-    fetch('/Datos/Lim_Est_Base.json')
-      .then(res => res.json())
-      .then(data => setLimEst(data))
-      .catch(err => console.error("Error loading Lim_Est_Base:", err));
+    let view;
+    let isMounted = true;
 
-    fetch('/Datos/Lim_Mun_Base.json')
-      .then(res => res.json())
-      .then(data => setLimMun(data))
-      .catch(err => console.error("Error loading Lim_Mun_Base:", err));
+    if (mapDiv.current) {
+      const map = new Map({ basemap: "gray-vector" });
 
-    fetch('/Datos/Crec_Urb_1980_2020.geojson')
-      .then(res => res.json())
-      .then(data => setCrecUrb(data))
-      .catch(err => console.error("Error loading Crec_Urb_1980_2020:", err));
+      view = new MapView({
+        container: mapDiv.current,
+        map: map,
+        center: [-90.5, 19.3],
+        zoom: 8,
+        ui: { components: [] } // Candado de UI
+      });
 
-    fetch('/Datos/Sociedad/Loc_rur.geojson')
-      .then(res => res.json())
-      .then(data => setLocRur(data))
-      .catch(err => console.error("Error loading Loc_rur:", err));
+      // 1. Límites Base
+      const limEstLayer = new GeoJSONLayer({
+        url: "/Datos/Lim_Est_Base.json",
+        renderer: { type: "simple", symbol: { type: "simple-fill", color: [0,0,0,0], outline: { color: "#0E6EC5", width: 2, style: "dash" } } }
+      });
 
-    fetch('/Datos/Infraestructura/Red_vial.geojson')
-      .then(res => res.json())
-      .then(data => setRedVial(data))
-      .catch(err => console.error("Error loading Red_vial:", err));
+      const limMunLayer = new GeoJSONLayer({
+        url: "/Datos/Lim_Mun_Base.json",
+        renderer: { type: "simple", symbol: { type: "simple-fill", color: [10, 207, 216, 0.1], outline: { color: "#009CD8", width: 1 } } }
+      });
 
-    fetch('/Datos/Infraestructura/Via_Ferrea.geojson')
-      .then(res => res.json())
-      .then(data => setViaFerrea(data))
-      .catch(err => console.error("Error loading Via_Ferrea:", err));
+      // 2. Crecimiento Urbano (Renderizado dinámico por atributo "layer")
+      const crecUrbEndLayer = new GeoJSONLayer({
+        url: "/Datos/Crec_Urb_1980_2020.geojson",
+        visible: false,
+        renderer: { type: "simple", symbol: { type: "simple-fill", color: [15, 206, 154, 0.4], outline: { color: "#0FCE9A", width: 2 } } }
+      });
 
-    cargarMapaBase()
-      .then(capas => setMapaBase(capas))
-      .catch(err => console.error("Error loading Mapa Base:", err));
+      const crecUrbStartLayer = new GeoJSONLayer({
+        url: "/Datos/Crec_Urb_1980_2020.geojson",
+        visible: false,
+        renderer: { type: "simple", symbol: { type: "simple-fill", color: [255, 82, 82, 0.15], outline: { color: "#FF5252", width: 2.5, style: "dash" } } }
+      });
+
+      // 3. Vía Férrea (Simbología condicional)
+      const viaFerreaLayer = new GeoJSONLayer({
+        url: "/Datos/Infraestructura/Via_Ferrea.geojson",
+        visible: false,
+        popupTemplate: { title: "{VIA}", content: "Servicio: {SERVICIO}<br/>Tipo: {TIPO_VIA}" },
+        renderer: {
+          type: "unique-value",
+          field: "VIA",
+          defaultSymbol: { type: "simple-line", color: "#64748B", width: 2, style: "dash" },
+          uniqueValueInfos: [
+            { value: "Tren Maya", symbol: { type: "simple-line", color: "#00D2C4", width: 3.5 } }
+          ]
+        }
+      });
+
+      // 4. Red Vial Nacional (Simbología condicional)
+      const redVialLayer = new GeoJSONLayer({
+        url: "/Datos/Infraestructura/Red_vial.geojson",
+        visible: false,
+        popupTemplate: { title: "{NOM_VIAL}", content: "Red Vial Nacional" },
+        renderer: {
+          type: "unique-value",
+          field: "TIPO_VIAL",
+          defaultSymbol: { type: "simple-line", color: "#64748B", width: 1.0 },
+          uniqueValueInfos: [
+            { value: "Carretera", symbol: { type: "simple-line", color: "#C00000", width: 2.2 } },
+            { value: "Boulevard", symbol: { type: "simple-line", color: "#C00000", width: 2.2 } },
+            { value: "Avenida", symbol: { type: "simple-line", color: "#F97316", width: 1.6 } },
+            { value: "Circuito", symbol: { type: "simple-line", color: "#F97316", width: 1.6 } },
+            { value: "Prolongación", symbol: { type: "simple-line", color: "#F97316", width: 1.6 } },
+            { value: "Calle", symbol: { type: "simple-line", color: "#78350F", width: 1.0 } },
+            { value: "Camino", symbol: { type: "simple-line", color: "#A16207", width: 1.4 } }
+          ]
+        }
+      });
+
+      // 5. Localidades Rurales
+      const locRurLayer = new GeoJSONLayer({
+        url: "/Datos/Sociedad/Loc_rur.geojson",
+        visible: false,
+        popupTemplate: { title: "{NOMGEO}", content: "Municipio: {NOM_MUN}<br/>Población: {POB1}" },
+        renderer: { type: "simple", symbol: { type: "simple-marker", color: "#FFB300", size: 6, outline: { color: "#FFFFFF", width: 1 } } }
+      });
+
+      const baseGroup = new GroupLayer({ visible: true });
+
+      // Agregamos todo al mapa
+      map.addMany([baseGroup, limEstLayer, limMunLayer, crecUrbEndLayer, crecUrbStartLayer, viaFerreaLayer, redVialLayer, locRurLayer]);
+
+      // Guardamos las referencias para prenderlas/apagarlas luego
+      layersRef.current = { crecUrbEndLayer, crecUrbStartLayer, viaFerreaLayer, redVialLayer, locRurLayer, baseGroup };
+
+      view.when(() => {
+        if (!isMounted) { view.destroy(); return; }
+        setViewInstance(view);
+      });
+    }
+
+    return () => {
+      isMounted = false;
+      if (view) {
+        view.container = null;
+        view.destroy();
+      }
+    };
   }, []);
 
-  const stateStyle = {
-    fillColor: "transparent",
-    color: "#0E6EC5", // primary blue
-    weight: 2,
-    opacity: 1,
-    dashArray: '3',
-  };
+  /* Carga del Mapa Base Dinámico de QGIS */
+  useEffect(() => {
+    cargarMapaBase().then(capas => {
+      setMapaBaseData(capas);
+      if (layersRef.current.baseGroup) {
+        layersRef.current.baseGroup.removeAll();
+        // Invertimos para respetar el orden visual original de Leaflet
+        [...capas].reverse().forEach(capa => {
+          // Convertimos la memoria JSON en una URL virtual para que ArcGIS la consuma velozmente
+          const blob = new Blob([JSON.stringify(capa.data)], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const geoLayer = new GeoJSONLayer({
+            url: url,
+            title: capa.id,
+            opacity: 0.8,
+            renderer: { type: "simple", symbol: { type: "simple-fill", color: [100, 116, 139, 0.2], outline: { color: [100, 116, 139, 0.8], width: 1 } } }
+          });
+          layersRef.current.baseGroup.add(geoLayer);
+        });
+      }
+    }).catch(err => console.error("Error loading Mapa Base:", err));
+  }, []);
 
-  const munStyle = {
-    fillColor: "#0ACFD8", // cyan
-    fillOpacity: 0.1,
-    color: "#009CD8", // secondary blue
-    weight: 1,
-    opacity: 0.8
-  };
+  /* Controladores de Visibilidad */
+  useEffect(() => {
+    if (layersRef.current.crecUrbStartLayer) {
+      layersRef.current.crecUrbStartLayer.visible = showCrecUrb;
+      layersRef.current.crecUrbEndLayer.visible = showCrecUrb;
+      layersRef.current.crecUrbStartLayer.definitionExpression = `layer = ${startYear}`;
+      layersRef.current.crecUrbEndLayer.definitionExpression = `layer = ${endYear}`;
+    }
+  }, [showCrecUrb, startYear, endYear]);
 
-  const startYearStyle = {
-    fillColor: "#FF5252", // Red/orange for initial year
-    fillOpacity: 0.15,
-    color: "#FF5252",
-    weight: 2.5,
-    dashArray: "3, 5"
-  };
+  useEffect(() => {
+    if (layersRef.current.viaFerreaLayer) layersRef.current.viaFerreaLayer.visible = showViaFerrea;
+  }, [showViaFerrea]);
 
-  const endYearStyle = {
-    fillColor: "#0FCE9A", // Teal/green for final year
-    fillOpacity: 0.4,
-    color: "#0FCE9A",
-    weight: 2
-  };
+  useEffect(() => {
+    if (layersRef.current.redVialLayer) layersRef.current.redVialLayer.visible = showRedVial;
+  }, [showRedVial]);
+
+  useEffect(() => {
+    if (layersRef.current.locRurLayer) layersRef.current.locRurLayer.visible = showLocRur;
+  }, [showLocRur]);
+
+  useEffect(() => {
+    if (layersRef.current.baseGroup) layersRef.current.baseGroup.visible = showMapaBase;
+  }, [showMapaBase]);
+
+  /* Cambio de Capa Base de Fondo */
+  useEffect(() => {
+    if (viewInstance) {
+      viewInstance.map.basemap = activeBaseLayer === 'claro' ? 'gray-vector' : 'satellite';
+    }
+  }, [activeBaseLayer, viewInstance]);
 
   return (
     <div className="map-container-wrapper">
-      {/* Floating custom layers sidebar on the left */}
+      {/* Barra lateral flotante de controles */}
       <div className={`map-sidebar ${isSidebarOpen ? 'open' : 'collapsed'}`}>
         <button 
           className="sidebar-toggle-btn" 
@@ -187,7 +267,7 @@ const MapViewer = () => {
               />
               <span className="switch-slider"></span>
               <span className="switch-label">
-                Mapa Base PEOTDU {mapaBase ? `(${mapaBase.length} capas)` : '(cargando…)'}
+                Mapa Base PEOTDU {mapaBaseData.length > 0 ? `(${mapaBaseData.length} capas)` : '(cargando…)'}
               </span>
             </label>
           </div>
@@ -327,7 +407,6 @@ const MapViewer = () => {
 
       {/* Controles flotantes en la esquina superior derecha */}
       <div className="map-custom-controls">
-        {/* Selector de Mapa Base */}
         <div style={{ position: 'relative' }}>
           <button
             onClick={() => setSelectorOpen(!selectorOpen)}
@@ -346,19 +425,13 @@ const MapViewer = () => {
             <div className="capa-base-popover">
               <h5>CAPA BASE</h5>
               <button
-                onClick={() => {
-                  setActiveBaseLayer('claro');
-                  setSelectorOpen(false);
-                }}
+                onClick={() => { setActiveBaseLayer('claro'); setSelectorOpen(false); }}
                 className={`capa-base-option ${activeBaseLayer === 'claro' ? 'active' : ''}`}
               >
                 Mapa Claro
               </button>
               <button
-                onClick={() => {
-                  setActiveBaseLayer('satelite');
-                  setSelectorOpen(false);
-                }}
+                onClick={() => { setActiveBaseLayer('satelite'); setSelectorOpen(false); }}
                 className={`capa-base-option ${activeBaseLayer === 'satelite' ? 'active' : ''}`}
               >
                 Vista Satelital
@@ -370,7 +443,7 @@ const MapViewer = () => {
         {/* Botones de Zoom y Descarga */}
         <div className="map-ctrl-stack">
           <button
-            onClick={() => mapInstance && mapInstance.zoomIn()}
+            onClick={() => viewInstance && viewInstance.goTo({ zoom: viewInstance.zoom + 1 })}
             className="map-ctrl-btn"
             aria-label="Acercar"
             title="Zoom in"
@@ -381,7 +454,7 @@ const MapViewer = () => {
             </svg>
           </button>
           <button
-            onClick={() => mapInstance && mapInstance.zoomOut()}
+            onClick={() => viewInstance && viewInstance.goTo({ zoom: viewInstance.zoom - 1 })}
             className="map-ctrl-btn"
             aria-label="Alejar"
             title="Zoom out"
@@ -403,180 +476,9 @@ const MapViewer = () => {
         </div>
       </div>
 
-      <MapContainer 
-        center={[19.3, -90.5]} 
-        zoom={8} 
-        minZoom={7}
-        maxBounds={CAMPECHE_BOUNDS}
-        maxBoundsViscosity={0.8}
-        zoomControl={false}
-        className="leaflet-map"
-        /* Canvas en vez de SVG: con el Mapa Base completo el mapa montaba
-           ~78 000 nodos en el DOM. Los marcadores en divIcon siguen siendo
-           DOM; canvas solo afecta a líneas y polígonos. */
-        preferCanvas={true}
-      >
-        <MapInstanceCapture setMapInstance={setMapInstance} />
-
-        {activeBaseLayer === 'satelite' ? (
-          <TileLayer
-            key="satelite"
-            attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          />
-        ) : (
-          <TileLayer
-            key="claro"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-          />
-        )}
-
-        {/* Mapa Base PEOTDU: se dibuja debajo de todo lo demás.
-            El array viene en orden de árbol de QGIS (la primera va encima), y
-            Leaflet pinta encima lo que se monta después, así que se invierte. */}
-        {showMapaBase && mapaBase && [...mapaBase].reverse().map((capa) => (
-          <GeoJSON
-            key={`mb-${capa.id}`}
-            data={capa.data}
-            /* `capa.simboloDe` es el resolvedor con memoria de esa capa: cachea
-               por valor del campo de clasificación. Leaflet lo llama tres veces
-               por elemento, así que resolver desde cero aquí costaba ~154 000
-               evaluaciones solo en la Red Nacional de Caminos.
-               Devuelve null cuando QGIS no dibujaría el elemento; el filter es
-               lo que respeta esa decisión en vez de pintarlo. */
-            filter={(feature) => capa.simboloDe(feature.properties) !== null}
-            style={(feature) => toPathOptions(capa.simboloDe(feature.properties), 1)}
-            pointToLayer={(feature, latlng) =>
-              toPointLayer(capa.simboloDe(feature.properties), latlng, 1)}
-          />
-        ))}
-
-        {/* Static/Always-on Overlays */}
-        {limEst && (
-          <GeoJSON key="limest" data={limEst} style={stateStyle} />
-        )}
-
-        {limMun && (
-          <GeoJSON key="limmun" data={limMun} style={munStyle} />
-        )}
-
-        {/* Conditional Overlays Controlled by Sidebar */}
-        {showCrecUrb && crecUrb && (
-          <>
-            {/* Render Final Year first (in background) */}
-            <GeoJSON 
-              key={`crecurb-end-${endYear}`} 
-              data={crecUrb} 
-              filter={(feature) => parseInt(feature.properties.layer) === endYear}
-              style={endYearStyle} 
-            />
-            {/* Render Initial Year second (on top) */}
-            <GeoJSON 
-              key={`crecurb-start-${startYear}`} 
-              data={crecUrb} 
-              filter={(feature) => parseInt(feature.properties.layer) === startYear}
-              style={startYearStyle} 
-            />
-          </>
-        )}
-
-        {showViaFerrea && viaFerrea && (
-          <GeoJSON 
-            key="viaferrea" 
-            data={viaFerrea} 
-            style={(feature) => {
-              const via = feature.properties.VIA;
-              if (via === 'Tren Maya') {
-                return {
-                  color: "#00D2C4",
-                  weight: 3.5,
-                  opacity: 0.95
-                };
-              } else {
-                return {
-                  color: "#64748B",
-                  weight: 2,
-                  dashArray: "5, 5",
-                  opacity: 0.85
-                };
-              }
-            }}
-            onEachFeature={(feature, layer) => {
-              if (feature.properties) {
-                const { VIA, SERVICIO, TIPO_VIA } = feature.properties;
-                layer.bindPopup(`
-                  <div style="font-family: sans-serif; padding: 2px; color: #333;">
-                    <strong style="font-size: 14px;">${VIA || 'Vía Férrea'}</strong><br/>
-                    <span style="font-size: 12px; color: #666;">Servicio: ${SERVICIO || 'N/D'}</span><br/>
-                    <span style="font-size: 12px; color: #666;">Tipo: ${TIPO_VIA || 'N/D'}</span>
-                  </div>
-                `);
-              }
-            }}
-          />
-        )}
-
-        {showRedVial && redVial && (
-          <GeoJSON 
-            key="redvial" 
-            data={redVial} 
-            style={(feature) => {
-              const tipo = feature.properties.TIPO_VIAL;
-              if (tipo === 'Carretera' || tipo === 'Boulevard') {
-                return { color: "#C00000", weight: 2.2, opacity: 0.9 };
-              } else if (tipo === 'Avenida' || tipo === 'Circuito' || tipo === 'Prolongación') {
-                return { color: "#F97316", weight: 1.6, opacity: 0.85 };
-              } else if (tipo === 'Calle' || tipo === 'Privada' || tipo === 'Cerrada' || tipo === 'Callejón' || tipo === 'Diagonal') {
-                return { color: "#78350F", weight: 1.0, opacity: 0.75 };
-              } else if (tipo === 'Camino' || tipo === 'Vereda' || tipo === 'Andador') {
-                return { color: "#A16207", weight: 1.4, opacity: 0.85 };
-              }
-              return { color: "#64748B", weight: 1.0, opacity: 0.75 }; // Otro
-            }}
-            onEachFeature={(feature, layer) => {
-              if (feature.properties) {
-                const name = feature.properties.NOM_VIAL || feature.properties.nombre || 'Carretera';
-                layer.bindPopup(`
-                  <div style="font-family: sans-serif; padding: 2px; color: #333;">
-                    <strong style="font-size: 14px;">${name}</strong><br/>
-                    <span style="font-size: 12px; color: #666;">Red Vial Nacional</span>
-                  </div>
-                `);
-              }
-            }}
-          />
-        )}
-
-        {showLocRur && locRur && (
-          <GeoJSON 
-            key="locrur" 
-            data={locRur} 
-            pointToLayer={(feature, latlng) => {
-              return L.circleMarker(latlng, {
-                radius: 4,
-                fillColor: "#FFB300", // Gold/Amber circle
-                color: "#FFFFFF",
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.9
-              });
-            }}
-            onEachFeature={(feature, layer) => {
-              if (feature.properties) {
-                const { NOMGEO, NOM_MUN, POB1 } = feature.properties;
-                layer.bindPopup(`
-                  <div style="font-family: sans-serif; padding: 2px; color: #333;">
-                    <strong style="font-size: 14px;">${NOMGEO}</strong><br/>
-                    <span style="font-size: 12px; color: #666;">Municipio: ${NOM_MUN}</span><br/>
-                    <span style="font-size: 12px; color: #666;">Población: ${POB1 !== undefined && POB1 >= 0 ? POB1 : 'N/D'}</span>
-                  </div>
-                `);
-              }
-            }}
-          />
-        )}
-      </MapContainer>
+      {/* Contenedor del Mapa ArcGIS */}
+      <div ref={mapDiv} style={{ width: '100%', height: '100%', zIndex: 1, outline: 'none' }} className="leaflet-map" />
+      
     </div>
   );
 };
