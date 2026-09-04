@@ -8,6 +8,7 @@ import DistanceMeasurement2D from "@arcgis/core/widgets/DistanceMeasurement2D";
 import { Map as MapIcon, List, Plus, Minus, Ruler, ChevronDown, ChevronUp } from 'lucide-react';
 import CapturistaSidebar from './CapturistaSidebar';
 import CapturistaModal from './CapturistaModal';
+import InstrumentoModal from './InstrumentoModal'; // Importamos el nuevo modal
 import '@arcgis/core/assets/esri/themes/light/main.css';
 import '../../geovisor/AdminMapViewer.css';
 import '../administradora/Admin.css';
@@ -19,7 +20,10 @@ const CapturistaLayout = () => {
   const [graphicsLayer, setGraphicsLayer] = useState(null);
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Estado que determina qué modal se abre
+  const [modalType, setModalType] = useState(null); 
+  
   const [isVerifying, setIsVerifying] = useState(false);
   const [nombreCapaActiva, setNombreCapaActiva] = useState('');
   
@@ -56,7 +60,6 @@ const CapturistaLayout = () => {
     return () => { window.removeEventListener('mousemove', handleMouseMove); window.removeEventListener('mouseup', handleMouseUp); };
   }, [isDragging]);
   
-  /* Inicialización Segura del Mapa ArcGIS */
   useEffect(() => {
     let view;
     let isMounted = true;
@@ -69,7 +72,7 @@ const CapturistaLayout = () => {
         map: map,
         center: [-90.5, 19.3], 
         zoom: 8,
-        ui: { components: [] } // <-- ¡AQUÍ ESTÁ LA CORRECCIÓN! Déjalo completamente vacío.
+        ui: { components: [] }
       });
 
       const gLayer = new GraphicsLayer();
@@ -94,14 +97,12 @@ const CapturistaLayout = () => {
     };
   }, []);
 
-  /* Actualizar Mapa Base */
   useEffect(() => {
     if (viewInstance && activeBaseMap) {
       viewInstance.map.basemap = activeBaseMap;
     }
   }, [activeBaseMap, viewInstance]);
 
-  /* Control de la herramienta de Medición de Esri */
   useEffect(() => {
     if (!viewInstance) return;
 
@@ -119,7 +120,6 @@ const CapturistaLayout = () => {
     }
   }, [isMeasuring, viewInstance]);
 
-  /* Renderizado del polígono de previsualización */
   useEffect(() => {
     if (graphicsLayer && isVerifying) {
       graphicsLayer.removeAll();
@@ -130,7 +130,7 @@ const CapturistaLayout = () => {
 
       const fillSymbol = {
         type: "simple-fill",
-        color: [159, 34, 65, 0.4], // Guinda
+        color: [159, 34, 65, 0.4], 
         outline: { color: [159, 34, 65, 1], width: 2 }
       };
 
@@ -140,11 +140,12 @@ const CapturistaLayout = () => {
     }
   }, [isVerifying, graphicsLayer]);
 
+  // Manejo del flujo de Cartografía (Modal original)
   const handleVerifyLayer = (nombreArchivo) => {
     setNombreCapaActiva(nombreArchivo);
     setCapasEnBorradores(prev => [nombreArchivo, ...prev]);
-    setActionLog(`Carga inicial: Archivos físicos y PDF técnico de "${nombreArchivo}" retenidos en memoria local.`);
-    setIsModalOpen(false);
+    setActionLog(`Carga inicial de cartografía: "${nombreArchivo}".`);
+    setModalType(null);
     setIsVerifying(true);
     if (viewInstance) viewInstance.goTo({ center: [-90.53, 19.85], zoom: 12 }, { duration: 1500 });
   };
@@ -153,11 +154,17 @@ const CapturistaLayout = () => {
     if (nombreCapaActiva) {
       setCapasEnBorradores(prev => prev.filter(capa => capa !== nombreCapaActiva));
       setCapasEnRevision(prev => [nombreCapaActiva, ...prev]);
-      setActionLog(`Confirmación EPSG y visualización: "${nombreCapaActiva}" enviada a revisión institucional.`);
     }
     setIsVerifying(false);
     setNombreCapaActiva('');
     if (viewInstance) viewInstance.goTo({ center: [-90.5, 19.3], zoom: 8 }, { duration: 1500 });
+  };
+
+  // Manejo del flujo de Instrumentos Normativos (Nuevo modal)
+  const handleInstrumentoSubmit = (nombreInstrumento) => {
+    console.log(`Instrumento normativo "${nombreInstrumento}" enviado a revisión.`);
+    // Aquí puedes agregar la lógica para guardar el instrumento en estado
+    setModalType(null);
   };
 
   const zoomIn = () => { if (viewInstance) viewInstance.goTo({ zoom: viewInstance.zoom + 1 }); };
@@ -218,13 +225,28 @@ const CapturistaLayout = () => {
 
       <div className="floating-sidebar-wrapper">
         <CapturistaSidebar 
-          isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen}
-          onOpenModal={() => setIsModalOpen(true)} isVerifying={isVerifying} onFinalSubmit={handleFinalSubmit}
-          capasEnBorradores={capasEnBorradores} capasEnRevision={capasEnRevision} actionLog={actionLog}
+          isSidebarOpen={isSidebarOpen} 
+          setIsSidebarOpen={setIsSidebarOpen}
+          onOpenModal={(type) => setModalType(type)} // Pasamos la funcion que recibe el tipo
+          isVerifying={isVerifying} 
+          onFinalSubmit={handleFinalSubmit}
+          capasEnBorradores={capasEnBorradores} 
+          capasEnRevision={capasEnRevision} 
         />
       </div>
       
-      <CapturistaModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onVerify={handleVerifyLayer} />
+      {/* Componentes modales condicionales */}
+      <CapturistaModal 
+        isOpen={modalType === 'cartografia'} 
+        onClose={() => setModalType(null)} 
+        onVerify={handleVerifyLayer} 
+      />
+
+      <InstrumentoModal 
+        isOpen={modalType === 'instrumento'} 
+        onClose={() => setModalType(null)} 
+        onSubmit={handleInstrumentoSubmit} 
+      />
 
     </div>
   );
