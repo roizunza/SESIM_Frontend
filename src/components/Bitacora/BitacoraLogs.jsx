@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Search, Eye, LogOut, Map, FileText, Clock, XCircle, CheckCircle, DownloadCloud } from 'lucide-react';
+import { ArrowLeft, Download, Search, Map, FileText, Clock, XCircle, CheckCircle, DownloadCloud } from 'lucide-react';
 import '../perfiles/auditora/Auditor.css';
 
 const mockLogs = [
@@ -111,16 +111,13 @@ export default function BitacoraLogs() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F4F5F7', fontFamily: 'var(--font-body)' }}>
+    /* Se agregó width 100% y flex 1 para obligar a ocupar todo el espacio disponible */
+    <div style={{ minHeight: '100vh', width: '100%', flex: 1, background: '#F4F5F7', fontFamily: 'var(--font-body)' }}>
       
-      <div style={{ background: '#fff', padding: '12px 24px', display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid #E5E7EB' }}>
-        <div style={{ display: 'flex', gap: '16px', color: '#6B7280' }}>
-          <Eye size={20} style={{ cursor: 'pointer' }} />
-          <LogOut size={20} style={{ cursor: 'pointer' }} onClick={() => navigate('/')} />
-        </div>
-      </div>
-
-      <div style={{ padding: '32px 40px', maxWidth: '1400px', margin: '0 auto' }}>
+      {/* Se eliminó el div del header duplicado que tenía el ojo y el logout */}
+      
+      {/* Se ajustó el maxWidth a 100% para que se expanda fluido */}
+      <div style={{ padding: '32px 40px', width: '100%', maxWidth: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -196,18 +193,18 @@ export default function BitacoraLogs() {
           </select>
         </div>
 
-        <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
+        <div className="table-responsive" style={{ background: '#fff', borderRadius: '8px', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
               <tr>
-                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563' }}>ID</th>
-                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563' }}>ROL</th>
-                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563' }}>OPERACIÓN</th>
-                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563' }}>TIPO</th>
-                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563' }}>RECURSO / ARCHIVO</th>
-                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563' }}>FECHA</th>
-                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563' }}>ESTATUS</th>
-                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563', textAlign: 'center' }}>DICTAMEN</th>
+                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563', whiteSpace: 'nowrap' }}>ID</th>
+                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563', whiteSpace: 'nowrap' }}>ROL</th>
+                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563', whiteSpace: 'nowrap' }}>OPERACIÓN</th>
+                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563', whiteSpace: 'nowrap' }}>TIPO</th>
+                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563', whiteSpace: 'nowrap' }}>RECURSO / ARCHIVO</th>
+                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563', whiteSpace: 'nowrap' }}>FECHA</th>
+                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563', whiteSpace: 'nowrap' }}>ESTATUS</th>
+                <th style={{ padding: '16px', fontSize: '12px', fontWeight: 'bold', color: '#4B5563', textAlign: 'center', whiteSpace: 'nowrap' }}>DICTAMEN</th>
               </tr>
             </thead>
             <tbody>
@@ -218,33 +215,33 @@ export default function BitacoraLogs() {
 
                 return (
                   <tr key={index} style={{ borderBottom: '1px solid #E5E7EB', background: '#fff' }}>
-                    <td style={{ padding: '16px', fontSize: '13px', fontWeight: '600', color: '#B91C1C' }}>
+                    <td style={{ padding: '16px', fontSize: '13px', fontWeight: '600', color: '#B91C1C', whiteSpace: 'nowrap' }}>
                       <span style={{ background: '#FEE2E2', padding: '4px 8px', borderRadius: '4px' }}>{log.id}</span>
                     </td>
-                    <td style={{ padding: '16px' }}>
+                    <td style={{ padding: '16px', whiteSpace: 'nowrap' }}>
                       <span style={{ background: rolStyle.bg, color: rolStyle.color, padding: '4px 10px', borderRadius: '16px', fontSize: '12px', fontWeight: '600' }}>
                         {log.rol}
                       </span>
                     </td>
-                    <td style={{ padding: '16px' }}>
+                    <td style={{ padding: '16px', whiteSpace: 'nowrap' }}>
                       <span style={{ background: opStyle.bg, color: opStyle.color, padding: '4px 10px', borderRadius: '4px', fontSize: '12px', fontWeight: '600' }}>
                         {log.operacion}
                       </span>
                     </td>
-                    <td style={{ padding: '16px' }}>
+                    <td style={{ padding: '16px', whiteSpace: 'nowrap' }}>
                       <span style={{ background: tipoStyle.bg, color: tipoStyle.color, padding: '4px 10px', borderRadius: '4px', fontSize: '12px', fontWeight: '600' }}>
                         {log.tipo}
                       </span>
                     </td>
-                    <td style={{ padding: '16px', fontSize: '13px', color: '#374151', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#374151', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                       {log.tipo === 'Cartografía' ? <Map size={16} color="#4F46E5" /> : <FileText size={16} color="#E11D48" />}
                       {log.archivo}
                     </td>
-                    <td style={{ padding: '16px', fontSize: '13px', color: '#6B7280' }}>{log.fecha}</td>
-                    <td style={{ padding: '16px' }}>
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#6B7280', whiteSpace: 'nowrap' }}>{log.fecha}</td>
+                    <td style={{ padding: '16px', whiteSpace: 'nowrap' }}>
                       {getEstatusBadge(log.estatus)}
                     </td>
-                    <td style={{ padding: '16px', textAlign: 'center' }}>
+                    <td style={{ padding: '16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       {log.dictamen ? (
                         <button style={{ background: '#fff', border: '1px solid #F87171', color: '#E11D48', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <DownloadCloud size={14} /> Dictamen
