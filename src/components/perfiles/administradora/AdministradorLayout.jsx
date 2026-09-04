@@ -1,60 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MapContainer, TileLayer, ScaleControl, Polyline, Marker, Tooltip, useMapEvents, useMap, GeoJSON } from 'react-leaflet';
-import L from 'leaflet';
+import Map from "@arcgis/core/Map";
+import MapView from "@arcgis/core/views/MapView";
+import GraphicsLayer from "@arcgis/core/layers/GraphicsLayer";
+import Graphic from "@arcgis/core/Graphic";
+import Polygon from "@arcgis/core/geometry/Polygon";
+import DistanceMeasurement2D from "@arcgis/core/widgets/DistanceMeasurement2D";
 import AdministradorSidebar from './AdministradorSidebar';
 import DashboardKPIs from './DashboardKPIs';
 import PanelDictamen from './PanelDictamen';
-import { Download, Table, Play, Map, List, Plus, Minus, Ruler, ChevronDown, ChevronUp, Printer } from 'lucide-react';
-import 'leaflet/dist/leaflet.css';
+import { Download, Table, Play, Map as MapIcon, List, Plus, Minus, Ruler, ChevronDown, ChevronUp, Printer } from 'lucide-react';
+import '@arcgis/core/assets/esri/themes/light/main.css';
 import '../../geovisor/AdminMapViewer.css';
 import '../capturista/Capturista.css'; 
 import './Admin.css';
-
-const MapInstanceCapture = ({ setMapInstance }) => {
-  const map = useMap();
-  useEffect(() => { setMapInstance(map); }, [map, setMapInstance]);
-  return null;
-};
-
-const MeasureTool = ({ isMeasuring }) => {
-  const [points, setPoints] = useState([]);
-  const [distance, setDistance] = useState(0);
-
-  useMapEvents({
-    click(e) {
-      if (!isMeasuring) return;
-      const newPoints = [...points, e.latlng];
-      setPoints(newPoints);
-      if (newPoints.length > 1) {
-        let dist = 0;
-        for (let i = 0; i < newPoints.length - 1; i++) {
-          dist += newPoints[i].distanceTo(newPoints[i + 1]);
-        }
-        setDistance(dist);
-      }
-    }
-  });
-
-  useEffect(() => { if (!isMeasuring) { setPoints([]); setDistance(0); } }, [isMeasuring]);
-
-  if (!isMeasuring || points.length === 0) return null;
-  const dotIcon = L.divIcon({ className: 'measure-dot', iconSize: [10, 10] });
-
-  return (
-    <>
-      <Polyline positions={points} color="#6b1428" weight={3} dashArray="5, 10" />
-      {points.map((p, i) => (
-        <Marker key={i} position={p} icon={dotIcon}>
-          {i === points.length - 1 && points.length > 1 && (
-            <Tooltip permanent direction="right" offset={[10, 0]} className="measure-tooltip">
-              {(distance / 1000).toFixed(2)} km
-            </Tooltip>
-          )}
-        </Marker>
-      ))}
-    </>
-  );
-};
 
 const catalogos = {
   "cat_instrumento": [
@@ -78,19 +36,13 @@ const catalogos = {
   ]
 };
 
-const mockGeoJSONData = {
-  type: "FeatureCollection",
-  features: [{
-    type: "Feature",
-    properties: { id: "T-001", instrumento: "PIMUS", nivel: "Estatal", fecha: "2026-08-15", estatus: "En Revisión", indicador: "Ciclovías" },
-    geometry: { type: "Polygon", coordinates: [[[-90.58, 19.82], [-90.48, 19.82], [-90.48, 19.88], [-90.58, 19.88], [-90.58, 19.82]]] }
-  }]
-};
-
 const CAMPECHE_BOUNDS = [[13.5, -97.0], [25.0, -83.0]];
 
 const AdministradorLayout = () => {
-  const [mapInstance, setMapInstance] = useState(null);
+  const mapDiv = useRef(null);
+  const measureWidgetRef = useRef(null);
+  const [viewInstance, setViewInstance] = useState(null);
+  const [graphicsLayer, setGraphicsLayer] = useState(null);
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [dashboardActivo, setDashboardActivo] = useState(false);
@@ -102,7 +54,7 @@ const AdministradorLayout = () => {
   const [capasAprobadas, setCapasAprobadas] = useState(['red_vial_primaria']);
 
   const [mapaBaseOpen, setMapaBaseOpen] = useState(false);
-  const [activeBaseMap, setActiveBaseMap] = useState('cartoLight');
+  const [activeBaseMap, setActiveBaseMap] = useState('gray-vector');
   const [isMeasuring, setIsMeasuring] = useState(false);
 
   const [herramientasPos, setHerramientasPos] = useState({ x: 300, y: 24 });
@@ -130,15 +82,89 @@ const AdministradorLayout = () => {
     return () => { window.removeEventListener('mousemove', handleMouseMove); window.removeEventListener('mouseup', handleMouseUp); };
   }, [isDragging]);
 
-  const renderBaseMap = () => {
-    switch (activeBaseMap) {
-      case 'cartoLight': return <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />;
-      case 'cartoDark': return <TileLayer url="http://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png" />;
-      case 'googleTer': return <TileLayer url="https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}" />;
-      case 'googleSat': return <TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" />;
-      default: return null;
+  /* Inicialización Segura del Mapa ArcGIS */
+  useEffect(() => {
+    let view;
+    let isMounted = true;
+
+    if (mapDiv.current) {
+      const map = new Map({ basemap: "gray-vector" });
+
+      view = new MapView({
+        container: mapDiv.current,
+        map: map,
+        center: [-90.5, 19.3], 
+        zoom: 8,
+        ui: { components: [] } // <-- Igual, vacío.
+      });
+
+      const gLayer = new GraphicsLayer();
+      map.add(gLayer);
+
+      view.when(() => {
+        if (!isMounted) {
+          view.destroy();
+          return;
+        }
+        setViewInstance(view);
+        setGraphicsLayer(gLayer);
+      });
     }
-  };
+
+    return () => {
+      isMounted = false;
+      if (view) {
+        view.container = null; 
+        view.destroy();
+      }
+    };
+  }, []);
+
+  /* Actualizar Mapa Base */
+  useEffect(() => {
+    if (viewInstance && activeBaseMap) {
+      viewInstance.map.basemap = activeBaseMap;
+    }
+  }, [activeBaseMap, viewInstance]);
+
+  /* Control de la herramienta de Medición de Esri */
+  useEffect(() => {
+    if (!viewInstance) return;
+
+    if (isMeasuring) {
+      const measurement = new DistanceMeasurement2D({ view: viewInstance });
+      measurement.viewModel.start();
+      viewInstance.ui.add(measurement, "bottom-right");
+      measureWidgetRef.current = measurement;
+    } else {
+      if (measureWidgetRef.current) {
+        viewInstance.ui.remove(measureWidgetRef.current);
+        measureWidgetRef.current.destroy();
+        measureWidgetRef.current = null;
+      }
+    }
+  }, [isMeasuring, viewInstance]);
+
+  /* Renderizado de Capas Geométricas */
+  useEffect(() => {
+    if (graphicsLayer && (capaActivaAuditoria || capaSimulada)) {
+      graphicsLayer.removeAll();
+      
+      const polygon = new Polygon({
+        rings: [[[-90.58, 19.82], [-90.48, 19.82], [-90.48, 19.88], [-90.58, 19.88], [-90.58, 19.82]]]
+      });
+
+      const fillSymbol = {
+        type: "simple-fill",
+        color: [245, 158, 11, 0.3], // Naranja/Ambar
+        outline: { color: [245, 158, 11, 1], width: 4 }
+      };
+
+      graphicsLayer.add(new Graphic({ geometry: polygon, symbol: fillSymbol }));
+    } else if (graphicsLayer) {
+      graphicsLayer.removeAll();
+    }
+  }, [capaActivaAuditoria, capaSimulada, graphicsLayer]);
 
   const handleGenerarTablero = () => {
     setCapaSimulada('Red de Movilidad Estatal');
@@ -148,7 +174,7 @@ const AdministradorLayout = () => {
   const handleSelectCapaAuditoria = (nombreCapa) => {
     setCapaActivaAuditoria(nombreCapa);
     setIsDictamenOpen(true);
-    if (mapInstance) mapInstance.flyTo([19.85, -90.53], 12, { duration: 1.5 });
+    if (viewInstance) viewInstance.goTo({ center: [-90.53, 19.85], zoom: 12 }, { duration: 1500 });
   };
 
   const procesarDictamen = (decision, comentario) => {
@@ -161,6 +187,9 @@ const AdministradorLayout = () => {
     setIsDictamenOpen(false);
     setCapaActivaAuditoria('');
   };
+
+  const zoomIn = () => { if (viewInstance) viewInstance.goTo({ zoom: viewInstance.zoom + 1 }); };
+  const zoomOut = () => { if (viewInstance) viewInstance.goTo({ zoom: viewInstance.zoom - 1 }); };
 
   return (
     <div className="dashboard-fullscreen-container">
@@ -196,40 +225,28 @@ const AdministradorLayout = () => {
 
             <div className="accordion-section">
               <button className="accordion-header" onClick={() => setMapaBaseOpen(!mapaBaseOpen)}>
-                <div className="header-title"><Map size={16} /><span>Mapa Base</span></div>
+                <div className="header-title"><MapIcon size={16} /><span>Mapa Base</span></div>
                 {mapaBaseOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
               <div className={`accordion-content ${mapaBaseOpen ? 'open' : ''}`}>
                 <div className="base-map-grid" style={{ marginTop: '8px' }}>
-                  <button className={`base-map-btn ${activeBaseMap === 'cartoLight' ? 'active' : ''}`} onClick={() => setActiveBaseMap('cartoLight')}>Carto Light</button>
-                  <button className={`base-map-btn ${activeBaseMap === 'cartoDark' ? 'active' : ''}`} onClick={() => setActiveBaseMap('cartoDark')}>Carto Dark</button>
-                  <button className={`base-map-btn ${activeBaseMap === 'googleTer' ? 'active' : ''}`} onClick={() => setActiveBaseMap('googleTer')}>Google Terrain</button>
-                  <button className={`base-map-btn ${activeBaseMap === 'googleSat' ? 'active' : ''}`} onClick={() => setActiveBaseMap('googleSat')}>Google Sat</button>
+                  <button className={`base-map-btn ${activeBaseMap === 'gray-vector' ? 'active' : ''}`} onClick={() => setActiveBaseMap('gray-vector')}>Carto Light</button>
+                  <button className={`base-map-btn ${activeBaseMap === 'dark-gray-vector' ? 'active' : ''}`} onClick={() => setActiveBaseMap('dark-gray-vector')}>Carto Dark</button>
+                  <button className={`base-map-btn ${activeBaseMap === 'terrain' ? 'active' : ''}`} onClick={() => setActiveBaseMap('terrain')}>Google Terrain</button>
+                  <button className={`base-map-btn ${activeBaseMap === 'satellite' ? 'active' : ''}`} onClick={() => setActiveBaseMap('satellite')}>Google Sat</button>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="external-toolbar" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <button onClick={() => mapInstance?.zoomIn()} title="Acercar"><Plus size={16} /></button>
-            <button onClick={() => mapInstance?.zoomOut()} title="Alejar"><Minus size={16} /></button>
+            <button onClick={zoomIn} title="Acercar"><Plus size={16} /></button>
+            <button onClick={zoomOut} title="Alejar"><Minus size={16} /></button>
             <button className={isMeasuring ? 'active' : ''} onClick={() => setIsMeasuring(!isMeasuring)} title="Medir distancia"><Ruler size={16} /></button>
           </div>
         </div>
 
-        <MapContainer center={[19.3, -90.5]} zoom={8} minZoom={7} maxBounds={CAMPECHE_BOUNDS} zoomControl={false} style={{ width: '100%', height: '100%', zIndex: 1 }} preferCanvas={true}>
-          <MapInstanceCapture setMapInstance={setMapInstance} />
-          {renderBaseMap()}
-          {(capaActivaAuditoria || dashboardActivo) && (
-            <GeoJSON 
-              key={capaActivaAuditoria || capaSimulada} 
-              data={mockGeoJSONData} 
-              pathOptions={{ color: '#F59E0B', weight: 4, fillColor: '#F59E0B', fillOpacity: 0.3 }} 
-            />
-          )}
-          <ScaleControl position="bottomleft" imperial={false} />
-          <MeasureTool isMeasuring={isMeasuring} />
-        </MapContainer>
+        <div ref={mapDiv} style={{ width: '100%', height: '100%', zIndex: 1, outline: 'none' }} />
       </div>
 
       <div className="floating-sidebar-wrapper">
